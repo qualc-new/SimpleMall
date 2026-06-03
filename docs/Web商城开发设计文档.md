@@ -98,7 +98,7 @@ apps/web/
 | `/` | 首页 | 推荐类目入口、热卖 SPU 列表 |
 | `/categories/:id` | 分类商品 | 左侧子类目 / 顶部面包屑，SPU 分页 |
 | `/products` | 全部商品 | 关键词搜索、排序（价格/默认） |
-| `/products/:id` | 商品详情 | SKU 选择器、库存提示、加购/立即购买 |
+| `/products/:id` | 商品详情 | SKU 选择器、SPU 状态角标（已售罄/补货中）、加购/立即购买 |
 | `/cart` | 购物车 | 勾选、改数量、失效行置灰、去结算 |
 | `/checkout` | 结算 | 选地址、商品清单、提交订单 |
 | `/orders` | 订单列表 | Tab：全部/待支付/待收货/已完成 |
@@ -114,14 +114,15 @@ flowchart LR
   A[加载 SpuDetail] --> B[specNames 维度]
   B --> C[用户逐维选择]
   C --> D[匹配唯一 SKU]
-  D --> E{stock > 0?}
+  D --> E{已上架且有库存?}
   E -->|是| F[启用加购/购买]
-  E -->|否| G[显示缺货]
+  E -->|否| G[展示状态提示]
 ```
 
 - `SkuSelector`：维护 `selectedSpecs: Record<string, string>`。
 - 匹配：`skus.find(s => 维度全匹配)`。
 - 价格/库存随当前 SKU 变化。
+- **SPU 状态**（`@simplemall/shared`）：仅 `ON_SALE` 可购；`SOLD_OUT` / `RESTOCKING` 展示标签并禁用按钮；列表页对非已上架状态展示角标。文案与规则见 [共享接口与约定](./共享接口与约定.md)。
 
 ### 4.3 结算页流程
 

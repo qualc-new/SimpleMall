@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { SpuStatus } from '@simplemall/shared';
+import { SpuStatus, syncSpuStatusByStock, totalAvailableStock } from '@simplemall/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { syncSpuStatusAfterStockChange } from './spu-status.helper';
 import { BizError } from '../../common/exceptions/business.exception';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/admin-category.dto';
 import { AdminCreateSpuDto, AdminUpdateSpuDto } from './dto/admin-spu.dto';
@@ -70,6 +71,13 @@ export class AdminCatalogService {
           status: 'ENABLED',
         })),
       });
+      const created = await tx.spu.findUnique({ where: { id: spu.id }, include: { skus: true } });
+      if (created) {
+        const next = syncSpuStatusByStock(created.status, totalAvailableStock(created.skus));
+        if (next !== created.status) {
+          await tx.spu.update({ where: { id: spu.id }, data: { status: next } });
+        }
+      }
       return tx.spu.findUnique({ where: { id: spu.id }, include: { skus: true } });
     });
   }
@@ -78,7 +86,7 @@ export class AdminCatalogService {
     const spu = await this.prisma.spu.findUnique({ where: { id }, include: { skus: true } });
     if (!spu) throw BizError.notFound();
 
-    return this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx) => {
       await tx.spu.update({
         where: { id },
         data: {
@@ -124,13 +132,28 @@ export class AdminCatalogService {
           }
         }
       }
-
-      return tx.spu.findUnique({ where: { id }, include: { skus: true } });
     });
+
+    await syncSpuStatusAfterStockChange(this.prisma, id);
+    return this.prisma.spu.findUnique({ where: { id }, include: { skus: true, category: true } });
   }
 
   async patchSpuStatus(id: number, status: SpuStatus) {
-    return this.prisma.spu.update({ where: { id }, data: { status } });
+    const spu = await this.prisma.spu.findUnique({ where: { id }, include: { skus: true } });
+    if (!spu) throw BizError.notFound();
+    let next = status;
+    if (status === SpuStatus.ON_SALE) {
+      next = syncSpuStatusByStock(SpuStatus.ON_SALE, totalAvailableStock(spu.skus));
+    }
+    return this.prisma.spu.update({
+      where: { id },
+      data: { status: next },
+      include: { skus: true, category: true },
+    });
+  }
+
+  async syncSpuStatusByStock(spuId: number) {
+    return syncSpuStatusAfterStockChange(this.prisma, spuId);
   }
 
   listSpusAdmin(page = 1, pageSize = 20) {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BizError } from '../../common/exceptions/business.exception';
-import { SpuStatus } from '@simplemall/shared';
+import { SpuStatus, isSpuPurchasable, normalizeSpuStatus } from '@simplemall/shared';
 
 @Injectable()
 export class CartService {
@@ -14,17 +14,24 @@ export class CartService {
     });
 
     return items.map((row) => {
+      const spuStatus = normalizeSpuStatus(row.sku.spu.status);
       const valid =
         row.sku.status === 'ENABLED' &&
-        row.sku.spu.status === SpuStatus.ON_SALE &&
-        row.sku.stock > 0;
+        isSpuPurchasable(spuStatus, row.sku.stock);
+      const invalidReason = valid
+        ? undefined
+        : spuStatus === SpuStatus.SOLD_OUT
+          ? '商品已售罄'
+          : spuStatus === SpuStatus.RESTOCKING
+            ? '商品补货中'
+            : '商品失效或库存不足';
       return {
         id: row.id,
         skuId: row.skuId,
         quantity: row.quantity,
         selected: row.selected,
         valid,
-        invalidReason: valid ? undefined : '商品失效或库存不足',
+        invalidReason,
         sku: {
           id: row.sku.id,
           price: row.sku.price,
@@ -42,7 +49,7 @@ export class CartService {
       where: { id: skuId },
       include: { spu: true },
     });
-    if (!sku || sku.spu.status !== SpuStatus.ON_SALE) {
+    if (!sku || !isSpuPurchasable(sku.spu.status, sku.stock)) {
       throw BizError.notFound('商品不可购买');
     }
     const qty = Math.min(99, quantity, sku.stock);

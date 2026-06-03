@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BizError } from '../../common/exceptions/business.exception';
-import { SpuStatus } from '@simplemall/shared';
+import { isSpuStorefrontVisible, normalizeSpuStatus } from '@simplemall/shared';
+import { SPU_STOREFRONT_WHERE } from './spu-status.helper';
 
 @Injectable()
 export class CatalogService {
@@ -37,7 +38,7 @@ export class CatalogService {
   }) {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 20;
-    const where: Prisma.SpuWhereInput = { status: SpuStatus.ON_SALE };
+    const where: Prisma.SpuWhereInput = SPU_STOREFRONT_WHERE;
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.keyword) where.title = { contains: query.keyword };
 
@@ -58,7 +59,7 @@ export class CatalogService {
         title: s.title,
         mainImage: s.mainImage,
         categoryId: s.categoryId,
-        status: s.status,
+        status: normalizeSpuStatus(s.status),
         minPrice: Math.min(...s.skus.map((k) => k.price), 0) || 0,
       })),
       total,
@@ -72,7 +73,7 @@ export class CatalogService {
       where: { id },
       include: { skus: true },
     });
-    if (!spu || spu.status !== SpuStatus.ON_SALE) {
+    if (!spu || !isSpuStorefrontVisible(spu.status)) {
       throw BizError.notFound('商品不存在或已下架');
     }
     const images = Array.isArray(spu.imagesJson) ? spu.imagesJson : [];
@@ -83,7 +84,7 @@ export class CatalogService {
       mainImage: spu.mainImage,
       images,
       categoryId: spu.categoryId,
-      status: spu.status,
+      status: normalizeSpuStatus(spu.status),
       skus: spu.skus.map((k) => ({
         id: k.id,
         spuId: k.spuId,

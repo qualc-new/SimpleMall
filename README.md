@@ -1,6 +1,6 @@
 # SimpleMall
 
-轻量电商 Monorepo，架构与开发说明见 [docs/README.md](./docs/README.md)。
+轻量电商 Monorepo，架构与开发说明见 [docs/README.md](./docs/README.md)，版本记录见 [docs/版本迭代说明.md](./docs/版本迭代说明.md)。
 
 ## 技术栈
 

@@ -56,7 +56,7 @@ model Spu {
   description String?  @db.Text
   mainImage   String   @map("main_image") @db.VarChar(512)
   imagesJson  Json     @default("[]") @map("images_json")
-  status      String   @default("DRAFT") @db.VarChar(32)
+  status      String   @default("NOT_LISTED") @db.VarChar(32)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

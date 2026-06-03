@@ -3,8 +3,16 @@
     <img :src="spu.mainImage" class="w-full md:w-80 aspect-square object-cover rounded-lg" alt="" />
     <div class="flex-1">
       <h1 class="text-xl font-semibold">{{ spu.title }}</h1>
+      <span
+        v-if="spu.status"
+        class="inline-block mt-2 text-xs px-2 py-0.5 rounded"
+        :class="badgeClass(spu.status)"
+      >
+        {{ statusLabel(spu.status) }}
+      </span>
       <p class="text-2xl text-emerald-700 mt-2">{{ format(currentSku?.price ?? 0) }}</p>
       <p class="text-sm text-gray-500 mt-1">库存：{{ currentSku?.stock ?? 0 }}</p>
+      <p v-if="buyHint" class="text-sm text-amber-700 mt-2">{{ buyHint }}</p>
       <div v-for="(values, name) in specMap" :key="name" class="mt-4">
         <p class="text-sm text-gray-600 mb-2">{{ name }}</p>
         <div class="flex flex-wrap gap-2">
@@ -22,14 +30,14 @@
       <div class="mt-6 flex gap-3">
         <button
           class="bg-emerald-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
-          :disabled="!currentSku || currentSku.stock < 1"
+          :disabled="!canBuy"
           @click="addCart"
         >
           加入购物车
         </button>
         <button
           class="border border-emerald-600 text-emerald-700 px-6 py-2 rounded-lg disabled:opacity-50"
-          :disabled="!currentSku || currentSku.stock < 1"
+          :disabled="!canBuy"
           @click="buyNow"
         >
           立即购买
@@ -42,6 +50,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const { format } = usePrice();
+const { label: statusLabel, badgeClass, canPurchase, purchaseHint } = useSpuStatus();
 const api = useApi();
 const cart = useCartStore();
 const auth = useAuthStore();
@@ -55,7 +64,9 @@ interface Sku {
 }
 
 const { data: spu } = await useAsyncData(`spu-${route.params.id}`, () =>
-  api<{ id: number; title: string; mainImage: string; skus: Sku[] }>(`/spus/${route.params.id}`),
+  api<{ id: number; title: string; mainImage: string; status: string; skus: Sku[] }>(
+    `/spus/${route.params.id}`,
+  ),
 );
 
 const selectedSpecs = reactive<Record<string, string>>({});
@@ -87,6 +98,18 @@ const currentSku = computed(() =>
   spu.value?.skus.find((s) =>
     Object.entries(selectedSpecs).every(([k, v]) => s.specs[k] === v),
   ),
+);
+
+const canBuy = computed(() =>
+  spu.value && currentSku.value
+    ? canPurchase(spu.value.status, currentSku.value.stock)
+    : false,
+);
+
+const buyHint = computed(() =>
+  spu.value && currentSku.value
+    ? purchaseHint(spu.value.status, currentSku.value.stock)
+    : '',
 );
 
 async function addCart() {

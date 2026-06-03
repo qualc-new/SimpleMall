@@ -115,17 +115,22 @@ export class AdminController {
   }
 
   @Patch('skus/:id/stock')
-  stock(
+  async stock(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { stock?: number; delta?: number },
   ) {
+    const sku = await this.prisma.sku.findUnique({ where: { id } });
+    if (!sku) throw BizError.notFound();
     if (body.stock != null) {
-      return this.prisma.sku.update({ where: { id }, data: { stock: body.stock } });
+      await this.prisma.sku.update({ where: { id }, data: { stock: body.stock } });
+    } else {
+      await this.prisma.sku.update({
+        where: { id },
+        data: { stock: { increment: body.delta ?? 0 } },
+      });
     }
-    return this.prisma.sku.update({
-      where: { id },
-      data: { stock: { increment: body.delta ?? 0 } },
-    });
+    await this.catalog.syncSpuStatusByStock(sku.spuId);
+    return this.prisma.sku.findUnique({ where: { id }, include: { spu: true } });
   }
 
   @Post('payments/mock-notify')

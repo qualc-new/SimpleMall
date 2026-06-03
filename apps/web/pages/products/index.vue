@@ -13,6 +13,13 @@
         <div class="p-3">
           <p class="line-clamp-2 text-sm">{{ item.title }}</p>
           <p class="text-emerald-700 font-medium mt-1">{{ format(item.minPrice) }}</p>
+          <span
+            v-if="item.status && item.status !== 'ON_SALE'"
+            class="inline-block mt-2 text-xs px-2 py-0.5 rounded"
+            :class="badgeClass(item.status)"
+          >
+            {{ statusLabel(item.status) }}
+          </span>
         </div>
       </NuxtLink>
     </div>
@@ -21,10 +28,13 @@
 
 <script setup lang="ts">
 const { format } = usePrice();
+const { label: statusLabel, badgeClass } = useSpuStatus();
 const api = useApi();
 
 const { data, pending } = await useAsyncData('spus', () =>
-  api<{ list: Array<{ id: number; title: string; mainImage: string; minPrice: number }> }>('/spus'),
+  api<{ list: Array<{ id: number; title: string; mainImage: string; minPrice: number; status: string }> }>(
+    '/spus',
+  ),
 );
 
 const list = computed(() => data.value?.list ?? []);

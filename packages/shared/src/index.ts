@@ -21,11 +21,7 @@ export enum PaymentStatus {
   CLOSED = "CLOSED",
 }
 
-export enum SpuStatus {
-  DRAFT = "DRAFT",
-  ON_SALE = "ON_SALE",
-  OFF_SALE = "OFF_SALE",
-}
+export * from './spu-status';
 
 export enum AdminRole {
   SUPER = "SUPER",

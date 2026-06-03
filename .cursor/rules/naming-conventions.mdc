@@ -1,0 +1,34 @@
+---
+description: SimpleMall Monorepo 命名与目录约定
+globs: "{apps/**/*.{ts,tsx,vue},packages/**/*.ts}"
+alwaysApply: false
+---
+
+# 命名规范
+
+## 包与路径
+
+- Workspace 包名：`@simplemall/api`、`@simplemall/web`、`@simplemall/admin`、`@simplemall/shared`。
+- 跨端枚举、状态文案：只在 `packages/shared` 定义，API 用 CJS 构建产物，Web/Admin 开发态可走 `src` 或 `dist/esm`。
+
+## API（NestJS，`apps/api`）
+
+- 文件：`*.module.ts`、`*.controller.ts`、`*.service.ts`；DTO 放 `dto/`，类名 `CreateXxxDto` / `UpdateXxxDto`。
+- 路由前缀：用户端 `/api/v1`，管理端 `/api/v1/admin`。
+- 业务异常：`BizError.*`；Prisma 表字段 snake_case，TS 属性用 `@map` 对齐。
+
+## 管理后台（React，`apps/admin`）
+
+- 页面：`pages/<域>/<Name>.tsx` 或 `pages/<Name>/index.tsx`；布局 `layouts/`。
+- 组件：PascalCase；复用 UI 放 `components/`；工具函数 `utils/`。
+- 状态标签等展示：优先用 `@simplemall/shared` 的 `*_LABEL` / `*Tag` 常量，避免硬编码中文枚举。
+
+## Web 商城（Nuxt，`apps/web`）
+
+- 路由：`pages/` 文件路由；组合式函数：`composables/useXxx.ts`。
+- 调用 API：`useApi()`；金额展示：`usePrice()`。
+
+## 通用
+
+- 新增 SPU 状态、订单状态等：先改 `packages/shared`，再改 API 与文档，最后改 Admin/Web。
+- 文件名与导出一致；避免 `utils/helper.ts` 式无意义命名，按职责命名（如 `categoryTree.ts`、`spu-status.ts`）。

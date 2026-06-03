@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { SpuStatus } from '@simplemall/shared';
 
 const prisma = new PrismaClient();
 
@@ -203,6 +204,8 @@ async function main() {
     },
   });
 
+  await prisma.spu.updateMany({ where: { status: 'DRAFT' }, data: { status: SpuStatus.NOT_LISTED } });
+
   for (const c of categories) {
     await prisma.category.upsert({
       where: { id: c.id },
@@ -233,7 +236,7 @@ async function main() {
         description: s.description,
         mainImage: s.mainImage,
         imagesJson: s.imagesJson,
-        status: 'ON_SALE',
+        status: SpuStatus.ON_SALE,
       },
       create: {
         id: s.id,
@@ -242,7 +245,7 @@ async function main() {
         description: s.description,
         mainImage: s.mainImage,
         imagesJson: s.imagesJson,
-        status: 'ON_SALE',
+        status: SpuStatus.ON_SALE,
       },
     });
 

@@ -14,9 +14,17 @@ export default defineNuxtConfig({
     resolve: {
       alias: {
         '@simplemall/shared': fileURLToPath(
-          new URL('../../packages/shared/dist/esm/index.js', import.meta.url),
+          new URL(
+            process.env.NODE_ENV === 'production'
+              ? '../../packages/shared/dist/esm/index.js'
+              : '../../packages/shared/src/index.ts',
+            import.meta.url,
+          ),
         ),
       },
+    },
+    optimizeDeps: {
+      exclude: ['@simplemall/shared'],
     },
   },
   runtimeConfig: {
