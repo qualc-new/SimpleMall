@@ -1,0 +1,45 @@
+---
+description: 生成或修改代码时自动补充中文备注（Prisma/API/前端）
+alwaysApply: true
+---
+
+# 代码备注（必做）
+
+**每次新增或实质性修改代码**时，必须为对外可读的符号补充中文备注；与现有文件风格一致，避免无意义注释。
+
+## Prisma（`apps/api/prisma`）
+
+- 每个 `model` 前一行 `/// 表说明`。
+- 每个标量字段上一行 `/// 字段说明`（含单位、枚举含义、关联说明）。
+- MySQL 需落库 COMMENT 时：改 `///` 后运行 `node prisma/scripts/generate-column-comments-sql.mjs` 并新增迁移（勿使用 `@comment`，Prisma 6 MySQL 不支持）。
+
+## API（NestJS）
+
+- 公开 DTO 类与字段：`class-validator` 旁用简短中文说明业务含义（复杂字段用行上注释）。
+- `*.service.ts`：非自解释的业务方法（状态流转、库存、支付）写方法级 JSDoc（做什么、关键副作用）。
+- `*.controller.ts`：非 REST 惯例的路由或查询参数，一行说明用途。
+
+## 共享包（`packages/shared`）
+
+- 导出的枚举、常量映射（如 `*_LABEL`）：每个枚举值或分组一行注释说明业务语义。
+
+## 管理后台 / Web
+
+- 复杂表单区块、状态机分支、金额/分↔元换算：关键逻辑处一行注释。
+- 可复用组件的非显然 `props`：在类型或解构处注明含义。
+- 纯展示、命名已自解释的 JSX/模板：**不**堆砌注释。
+
+## 禁止
+
+- 不写「初始化变量」「调用接口」类废话注释。
+- 不为了备注而备注；改一行 typo 不必扩写全文注释。
+
+## 示例（Prisma）
+
+```prisma
+/// 订单主表
+model Order {
+  /// 实付金额，单位：分
+  payAmount Int @map("pay_amount")
+}
+```

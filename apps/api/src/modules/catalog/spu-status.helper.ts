@@ -11,11 +11,12 @@ export async function syncSpuStatusAfterStockChange(prisma: PrismaService, spuId
 
   const stock = totalAvailableStock(spu.skus);
   const next = syncSpuStatusByStock(spu.status, stock);
-  if (next === spu.status) return spu;
+  const unchanged = next === spu.status && spu.totalStock === stock;
+  if (unchanged) return spu;
 
   return prisma.spu.update({
     where: { id: spuId },
-    data: { status: next },
+    data: { status: next, totalStock: stock },
     include: { skus: true, category: true },
   });
 }

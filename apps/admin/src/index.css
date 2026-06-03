@@ -201,9 +201,37 @@ body {
   line-height: 1.4;
 }
 
+.product-cell__body {
+  min-width: 0;
+}
+
 .product-cell__meta {
   font-size: 12px;
   color: #8c8c8c;
+}
+
+.product-cell__tags {
+  margin-top: 4px;
+}
+
+.product-list-toolbar .ant-table-wrapper {
+  margin-top: 0;
+}
+
+/* ---------- 富文本 ---------- */
+.rich-text-editor .ql-container {
+  min-height: 200px;
+  font-size: 14px;
+}
+
+.rich-text-editor .ql-editor {
+  min-height: 200px;
+}
+
+.spec-dim-row__label {
+  display: inline-block;
+  min-width: 48px;
+  font-weight: 500;
 }
 
 .sku-line {

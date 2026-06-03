@@ -1,6 +1,5 @@
 import axios, { AxiosError } from 'axios';
-
-const TOKEN_KEY = 'admin_token';
+import { clearStoredToken, getStoredToken, setStoredToken } from './authStorage';
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api/v1',
@@ -8,7 +7,7 @@ export const http = axios.create({
 });
 
 http.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem(TOKEN_KEY);
+  const token = getStoredToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -34,13 +33,13 @@ http.interceptors.response.use(
 );
 
 export function setToken(token: string) {
-  sessionStorage.setItem(TOKEN_KEY, token);
+  setStoredToken(token);
 }
 
 export function clearToken() {
-  sessionStorage.removeItem(TOKEN_KEY);
+  clearStoredToken();
 }
 
 export function getToken() {
-  return sessionStorage.getItem(TOKEN_KEY);
+  return getStoredToken();
 }

@@ -1,0 +1,44 @@
+-- 商品主表扩展（对齐 goods 主表字段，SPU 层存储；金额单位为分）
+CREATE TABLE `brands` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(128) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+ALTER TABLE `spus`
+    ADD COLUMN `goods_sn` VARCHAR(64) NULL,
+    ADD COLUMN `short_name` VARCHAR(128) NOT NULL DEFAULT '',
+    ADD COLUMN `subtitle` VARCHAR(512) NOT NULL DEFAULT '',
+    ADD COLUMN `brand_id` INTEGER NULL,
+    ADD COLUMN `cate1_id` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `cate2_id` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `cate3_id` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `category_path` VARCHAR(64) NOT NULL DEFAULT '',
+    ADD COLUMN `spec_type` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `attr_json` JSON NULL,
+    ADD COLUMN `tag_list` VARCHAR(512) NOT NULL DEFAULT '',
+    ADD COLUMN `market_price` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `cost_price` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `vip_price` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `unit` VARCHAR(20) NOT NULL DEFAULT '件',
+    ADD COLUMN `weight` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `volume` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `total_stock` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `sale_num` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `warn_stock` INTEGER NOT NULL DEFAULT 10,
+    ADD COLUMN `express_id` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `freight_type` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `limit_buy` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `is_new` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `is_hot` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `is_recommend` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `sort` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `putaway_time` DATETIME(3) NULL;
+
+CREATE UNIQUE INDEX `spus_goods_sn_key` ON `spus`(`goods_sn`);
+CREATE INDEX `spus_brand_id_idx` ON `spus`(`brand_id`);
+CREATE INDEX `spus_cate_idx` ON `spus`(`cate1_id`, `cate2_id`, `cate3_id`);
+CREATE INDEX `spus_sort_idx` ON `spus`(`sort`);
+
+ALTER TABLE `spus` ADD CONSTRAINT `spus_brand_id_fkey` FOREIGN KEY (`brand_id`) REFERENCES `brands`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

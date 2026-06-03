@@ -4,6 +4,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { BizError } from '../../common/exceptions/business.exception';
 import { isSpuStorefrontVisible, normalizeSpuStatus } from '@simplemall/shared';
 import { SPU_STOREFRONT_WHERE } from './spu-status.helper';
+import { formatSpuExtra } from './spu-meta.helper';
 
 @Injectable()
 export class CatalogService {
@@ -48,7 +49,7 @@ export class CatalogService {
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: { skus: { where: { status: 'ENABLED' } } },
-        orderBy: { id: 'desc' },
+        orderBy: [{ sort: 'desc' }, { id: 'desc' }],
       }),
       this.prisma.spu.count({ where }),
     ]);
@@ -57,10 +58,19 @@ export class CatalogService {
       list: list.map((s) => ({
         id: s.id,
         title: s.title,
+        shortName: s.shortName,
+        subtitle: s.subtitle,
         mainImage: s.mainImage,
         categoryId: s.categoryId,
         status: normalizeSpuStatus(s.status),
         minPrice: Math.min(...s.skus.map((k) => k.price), 0) || 0,
+        marketPrice: s.marketPrice,
+        totalStock: s.totalStock,
+        saleNum: s.saleNum,
+        tagList: s.tagList ? s.tagList.split(',').filter(Boolean) : [],
+        isNew: s.isNew,
+        isHot: s.isHot,
+        isRecommend: s.isRecommend,
       })),
       total,
       page,
@@ -85,6 +95,7 @@ export class CatalogService {
       images,
       categoryId: spu.categoryId,
       status: normalizeSpuStatus(spu.status),
+      ...formatSpuExtra(spu),
       skus: spu.skus.map((k) => ({
         id: k.id,
         spuId: k.spuId,

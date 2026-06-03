@@ -44,6 +44,10 @@
         </button>
       </div>
     </div>
+    <section v-if="spu.description" class="mt-8 pt-6 border-t">
+      <h2 class="text-lg font-semibold mb-3">商品详情</h2>
+      <div class="prose prose-sm max-w-none text-gray-700" v-html="spu.description" />
+    </section>
   </div>
 </template>
 
@@ -64,7 +68,7 @@ interface Sku {
 }
 
 const { data: spu } = await useAsyncData(`spu-${route.params.id}`, () =>
-  api<{ id: number; title: string; mainImage: string; status: string; skus: Sku[] }>(
+  api<{ id: number; title: string; mainImage: string; status: string; description?: string; skus: Sku[] }>(
     `/spus/${route.params.id}`,
   ),
 );

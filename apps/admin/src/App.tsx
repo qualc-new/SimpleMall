@@ -6,6 +6,8 @@ import OrderListPage from './pages/Order/List';
 import ProductListPage from './pages/Product/List';
 import SpuFormPage from './pages/Product/SpuForm';
 import CategoryListPage from './pages/Category/List';
+import BrandListPage from './pages/Brand/List';
+import ExpressListPage from './pages/Express/List';
 import OrderDetailPage from './pages/Order/Detail';
 import MockPayPage from './pages/DevTools/MockPay';
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -30,6 +32,8 @@ export default function App() {
           <Route path="products/new" element={<SpuFormPage />} />
           <Route path="products/:id/edit" element={<SpuFormPage />} />
           <Route path="categories" element={<CategoryListPage />} />
+          <Route path="brands" element={<BrandListPage />} />
+          <Route path="express-templates" element={<ExpressListPage />} />
           <Route path="dev/mock-pay" element={<MockPayPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

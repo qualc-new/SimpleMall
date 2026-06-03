@@ -7,6 +7,7 @@ packages/shared/dist
 .env
 .env.local
 *.log
+apps/api/uploads
 .DS_Store
 coverage
 .idea

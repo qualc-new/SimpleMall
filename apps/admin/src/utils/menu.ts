@@ -1,6 +1,8 @@
 export const MENU_PATHS = [
   { key: '/', prefix: false },
   { key: '/categories', prefix: true },
+  { key: '/brands', prefix: true },
+  { key: '/express-templates', prefix: true },
   { key: '/products', prefix: true },
   { key: '/orders', prefix: true },
   { key: '/dev/mock-pay', prefix: true },
@@ -17,6 +19,8 @@ export function matchMenuKey(pathname: string): string {
 export const BREADCRUMB_LABELS: Record<string, string> = {
   '/': '仪表盘',
   '/categories': '类目管理',
+  '/brands': '品牌管理',
+  '/express-templates': '运费模板',
   '/products': '商品列表',
   '/orders': '订单列表',
   '/dev/mock-pay': '模拟支付',

@@ -1,4 +1,5 @@
-import { Button, Input, InputNumber, Space, Table } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
+import { App, Button, Input, InputNumber, Popconfirm, Space, Table } from 'antd';
 import { useMemo, useState } from 'react';
 
 export interface SkuRow {
@@ -30,20 +31,40 @@ export default function SpecMatrixEditor({
   onSpecNamesChange,
   onSpecValuesChange,
 }: Props) {
+  const { message } = App.useApp();
   const [newDim, setNewDim] = useState('');
 
   const generate = () => {
     const dims = specNames.filter((n) => (specValues[n] || []).length > 0);
-    if (!dims.length) return;
+    if (!dims.length) {
+      message.warning('请为至少一个规格维度填写规格值');
+      return;
+    }
     const combos = cartesian(dims.map((n) => specValues[n]));
     const next: SkuRow[] = combos.map((combo) => {
       const specs: Record<string, string> = {};
-      dims.forEach((n, i) => { specs[n] = combo[i]; });
+      dims.forEach((n, i) => {
+        specs[n] = combo[i];
+      });
       const key = JSON.stringify(specs);
       const old = rows.find((r) => JSON.stringify(r.specs) === key);
       return old ?? { key, specs, price: 9900, stock: 0 };
     });
     onChange(next);
+  };
+
+  const removeDimension = (name: string) => {
+    if (specNames.length <= 1) {
+      message.warning('至少保留一个规格维度');
+      return;
+    }
+    const nextNames = specNames.filter((n) => n !== name);
+    const nextValues = { ...specValues };
+    delete nextValues[name];
+    onSpecNamesChange(nextNames);
+    onSpecValuesChange(nextValues);
+    const filtered = rows.filter((r) => !(name in r.specs));
+    onChange(filtered);
   };
 
   const columns = useMemo(
@@ -82,9 +103,10 @@ export default function SpecMatrixEditor({
         <Input placeholder="规格名如：颜色" value={newDim} onChange={(e) => setNewDim(e.target.value)} />
         <Button
           onClick={() => {
-            if (!newDim || specNames.includes(newDim)) return;
-            onSpecNamesChange([...specNames, newDim]);
-            onSpecValuesChange({ ...specValues, [newDim]: [] });
+            const dim = newDim.trim();
+            if (!dim || specNames.includes(dim)) return;
+            onSpecNamesChange([...specNames, dim]);
+            onSpecValuesChange({ ...specValues, [dim]: [] });
             setNewDim('');
           }}
         >
@@ -95,19 +117,40 @@ export default function SpecMatrixEditor({
         </Button>
       </Space>
       {specNames.map((n) => (
-        <div key={n} className="mb-2">
-          <span>{n}：</span>
-          <Input
-            placeholder="多个值用逗号分隔"
-            style={{ width: 320 }}
-            value={(specValues[n] || []).join(',')}
-            onChange={(e) =>
-              onSpecValuesChange({
-                ...specValues,
-                [n]: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
-              })
-            }
-          />
+        <div key={n} className="spec-dim-row mb-2">
+          <Space align="start">
+            <span className="spec-dim-row__label">{n}：</span>
+            <Input
+              placeholder="多个值用逗号分隔"
+              style={{ width: 320 }}
+              value={(specValues[n] || []).join(',')}
+              onChange={(e) =>
+                onSpecValuesChange({
+                  ...specValues,
+                  [n]: e.target.value
+                    .split(/[,，]/)
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                })
+              }
+            />
+            <Popconfirm
+              title={`删除规格维度「${n}」？`}
+              description="将同时移除该维度下的 SKU 组合"
+              onConfirm={() => removeDimension(n)}
+              disabled={specNames.length <= 1}
+            >
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                disabled={specNames.length <= 1}
+              >
+                删除维度
+              </Button>
+            </Popconfirm>
+          </Space>
         </div>
       ))}
       <Table rowKey="key" size="small" pagination={false} columns={columns} dataSource={rows} />

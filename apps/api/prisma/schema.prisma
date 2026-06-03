@@ -1,3 +1,9 @@
+// =============================================================================
+// SimpleMall 数据模型
+// - 字段 /// 与模型 ///：Prisma 文档注释（IDE、prisma format）
+// - MySQL 表/列 COMMENT：见迁移 20260603130000_db_column_comments
+// =============================================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,41 +13,106 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// C 端用户表
 model User {
+  /// 用户主键 ID
   id        Int      @id @default(autoincrement())
+  /// 手机号（登录账号）
   phone     String   @unique @db.VarChar(20)
+  /// 密码 bcrypt 哈希
   password  String   @db.VarChar(255)
+  /// 昵称
   nickname  String?  @db.VarChar(64)
+  /// 创建时间
   createdAt DateTime @default(now()) @map("created_at")
+  /// 更新时间
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  cartItems  CartItem[]
-  orders     Order[]
-  addresses  Address[]
+  cartItems CartItem[]
+  orders    Order[]
+  addresses Address[]
 
   @@map("users")
 }
 
+/// 管理后台管理员
 model Admin {
+  /// 管理员主键 ID
   id        Int      @id @default(autoincrement())
+  /// 登录用户名
   username  String   @unique @db.VarChar(64)
+  /// 密码 bcrypt 哈希
   password  String   @db.VarChar(255)
+  /// 角色 SUPER / OPERATOR
   role      String   @db.VarChar(32)
+  /// 创建时间
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("admins")
 }
 
-model Category {
+/// 商品品牌
+model Brand {
+  /// 品牌主键 ID
   id        Int      @id @default(autoincrement())
-  parentId  Int?     @map("parent_id")
+  /// 品牌名称
   name      String   @db.VarChar(128)
-  level     Int      @default(1)
-  sort      Int      @default(0)
-  path      String   @db.VarChar(255)
+  /// 创建时间
   createdAt DateTime @default(now()) @map("created_at")
 
-  parent Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  spus Spu[]
+
+  @@map("brands")
+}
+
+/// 商品标签（管理端词库，SPU tag_list 可引用）
+model Tag {
+  /// 标签主键 ID
+  id        Int      @id @default(autoincrement())
+  /// 标签名称
+  name      String   @unique @db.VarChar(64)
+  /// 创建时间
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tags")
+}
+
+/// 运费模板
+model ExpressTemplate {
+  /// 模板主键 ID
+  id          Int      @id @default(autoincrement())
+  /// 模板名称
+  name        String   @db.VarChar(128)
+  /// 首件运费，分
+  firstFee    Int      @default(0) @map("first_fee")
+  /// 续件运费，分
+  continueFee Int      @default(0) @map("continue_fee")
+  /// 备注说明
+  remark      String   @default("") @db.VarChar(255)
+  /// 创建时间
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("express_templates")
+}
+
+/// 商品类目（树形）
+model Category {
+  /// 类目主键 ID
+  id        Int      @id @default(autoincrement())
+  /// 父类目 ID，一级类目为空
+  parentId  Int?     @map("parent_id")
+  /// 类目名称
+  name      String   @db.VarChar(128)
+  /// 层级 1=一级 2=二级 …
+  level     Int      @default(1)
+  /// 排序权重，越大越靠前
+  sort      Int      @default(0)
+  /// 祖先路径，如 /1/2/
+  path      String   @db.VarChar(255)
+  /// 创建时间
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children Category[] @relation("CategoryTree")
   spus     Spu[]
 
@@ -49,51 +120,137 @@ model Category {
   @@map("categories")
 }
 
+/// 商品 SPU 主表（对齐 goods 主表字段）
 model Spu {
-  id          Int      @id @default(autoincrement())
-  categoryId  Int      @map("category_id")
-  title       String   @db.VarChar(255)
-  description String?  @db.Text
-  mainImage   String   @map("main_image") @db.VarChar(512)
-  imagesJson  Json     @default("[]") @map("images_json")
-  status      String   @default("NOT_LISTED") @db.VarChar(32)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  /// 商品主键 ID
+  id           Int       @id @default(autoincrement())
+  /// 商品货号，唯一
+  goodsSn      String?   @unique @map("goods_sn") @db.VarChar(64)
+  /// 叶子类目 ID（关联 categories）
+  categoryId   Int       @map("category_id")
+  /// 商品名称 goods_name
+  title        String    @db.VarChar(255)
+  /// 短标题
+  shortName    String    @default("") @map("short_name") @db.VarChar(128)
+  /// 副标题/卖点
+  subtitle     String    @default("") @db.VarChar(512)
+  /// 详情描述
+  description  String?   @db.Text
+  /// 品牌 ID
+  brandId      Int?      @map("brand_id")
+  /// 一级分类 ID
+  cate1Id      Int       @default(0) @map("cate1_id")
+  /// 二级分类 ID
+  cate2Id      Int       @default(0) @map("cate2_id")
+  /// 三级分类 ID（二层级级时与叶子类目一致）
+  cate3Id      Int       @default(0) @map("cate3_id")
+  /// 分类路径，逗号分隔 1,2,3
+  categoryPath String    @default("") @map("category_path") @db.VarChar(64)
+  /// 主图 URL
+  mainImage    String    @map("main_image") @db.VarChar(512)
+  /// 轮播图 JSON 数组
+  imagesJson   Json      @default("[]") @map("images_json")
+  /// 规格类型 0单规格 1多规格
+  specType     Int       @default(0) @map("spec_type")
+  /// 商品参数 JSON
+  attrJson     Json?     @map("attr_json")
+  /// 标签，逗号分隔
+  tagList      String    @default("") @map("tag_list") @db.VarChar(512)
+  /// 市场价/划线价，单位：分
+  marketPrice  Int       @default(0) @map("market_price")
+  /// 成本价，单位：分
+  costPrice    Int       @default(0) @map("cost_price")
+  /// 会员价，单位：分
+  vipPrice     Int       @default(0) @map("vip_price")
+  /// 计价单位
+  unit         String    @default("件") @db.VarChar(20)
+  /// 重量，克
+  weight       Int       @default(0)
+  /// 体积，立方厘米
+  volume       Int       @default(0)
+  /// 总库存（SKU 汇总）
+  totalStock   Int       @default(0) @map("total_stock")
+  /// 累计销量
+  saleNum      Int       @default(0) @map("sale_num")
+  /// 库存预警值
+  warnStock    Int       @default(10) @map("warn_stock")
+  /// 运费模板 ID
+  expressId    Int       @default(0) @map("express_id")
+  /// 包邮 0否 1是
+  freightType  Int       @default(0) @map("freight_type")
+  /// 限购数量 0不限
+  limitBuy     Int       @default(0) @map("limit_buy")
+  /// 是否新品
+  isNew        Boolean   @default(false) @map("is_new")
+  /// 是否热销
+  isHot        Boolean   @default(false) @map("is_hot")
+  /// 是否首页推荐
+  isRecommend  Boolean   @default(false) @map("is_recommend")
+  /// 商品状态 SpuStatus 枚举字符串
+  status       String    @default("NOT_LISTED") @db.VarChar(32)
+  /// 排序权重
+  sort         Int       @default(0)
+  /// 上架时间
+  putawayTime  DateTime? @map("putaway_time")
+  /// 创建时间
+  createdAt    DateTime  @default(now()) @map("created_at")
+  /// 更新时间
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   category Category @relation(fields: [categoryId], references: [id])
+  brand    Brand?   @relation(fields: [brandId], references: [id])
   skus     Sku[]
 
   @@index([categoryId])
   @@index([status])
+  @@index([brandId])
+  @@index([cate1Id, cate2Id, cate3Id])
+  @@index([sort])
   @@map("spus")
 }
 
+/// 商品 SKU（规格库存售价）
 model Sku {
+  /// SKU 主键 ID
   id        Int      @id @default(autoincrement())
+  /// 所属 SPU ID
   spuId     Int      @map("spu_id")
+  /// 规格 JSON，如 {"颜色":"红","尺码":"L"}
   specsJson Json     @map("specs_json")
-  price     Int
+  /// 售价，单位：分
+  price     Int     
+  /// 可售库存
   stock     Int      @default(0)
+  /// 预占库存（待支付订单）
   reserved  Int      @default(0)
+  /// 乐观锁版本号
   version   Int      @default(0)
+  /// 条形码
   barcode   String?  @db.VarChar(64)
+  /// 状态 ENABLED / DISABLED
   status    String   @default("ENABLED") @db.VarChar(32)
 
-  spu              Spu                    @relation(fields: [spuId], references: [id])
-  cartItems        CartItem[]
-  orderItems       OrderItem[]
-  reservations     InventoryReservation[]
+  spu          Spu                    @relation(fields: [spuId], references: [id])
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  reservations InventoryReservation[]
 
   @@index([spuId])
   @@map("skus")
 }
 
+/// 购物车行
 model CartItem {
-  id        Int     @id @default(autoincrement())
-  userId    Int     @map("user_id")
-  skuId     Int     @map("sku_id")
-  quantity  Int     @default(1)
-  selected  Boolean @default(true)
+  /// 购物车行主键 ID
+  id       Int     @id @default(autoincrement())
+  /// 用户 ID
+  userId   Int     @map("user_id")
+  /// SKU ID
+  skuId    Int     @map("sku_id")
+  /// 数量
+  quantity Int     @default(1)
+  /// 是否勾选结算
+  selected Boolean @default(true)
 
   user User @relation(fields: [userId], references: [id])
   sku  Sku  @relation(fields: [skuId], references: [id])
@@ -102,15 +259,25 @@ model CartItem {
   @@map("cart_items")
 }
 
+/// 用户收货地址
 model Address {
+  /// 地址主键 ID
   id        Int     @id @default(autoincrement())
+  /// 用户 ID
   userId    Int     @map("user_id")
+  /// 收货人姓名
   name      String  @db.VarChar(64)
+  /// 收货人手机
   phone     String  @db.VarChar(20)
+  /// 省
   province  String  @db.VarChar(64)
+  /// 市
   city      String  @db.VarChar(64)
+  /// 区/县
   district  String  @db.VarChar(64)
+  /// 详细地址
   detail    String  @db.VarChar(255)
+  /// 是否默认地址
   isDefault Boolean @default(false) @map("is_default")
 
   user User @relation(fields: [userId], references: [id])
@@ -119,18 +286,30 @@ model Address {
   @@map("addresses")
 }
 
+/// 订单主表
 model Order {
-  id          Int      @id @default(autoincrement())
-  orderNo     String   @unique @map("order_no") @db.VarChar(32)
-  userId      Int      @map("user_id")
-  status      String   @db.VarChar(32)
-  totalAmount Int      @map("total_amount")
-  payAmount   Int      @map("pay_amount")
-  remark      String?  @db.VarChar(255)
-  addressJson Json     @map("address_json")
-  logisticsJson Json?  @map("logistics_json")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  /// 订单主键 ID
+  id            Int      @id @default(autoincrement())
+  /// 订单号
+  orderNo       String   @unique @map("order_no") @db.VarChar(32)
+  /// 用户 ID
+  userId        Int      @map("user_id")
+  /// 订单状态 OrderStatus
+  status        String   @db.VarChar(32)
+  /// 商品总金额，分
+  totalAmount   Int      @map("total_amount")
+  /// 实付金额，分
+  payAmount     Int      @map("pay_amount")
+  /// 买家留言
+  remark        String?  @db.VarChar(255)
+  /// 收货地址快照 JSON
+  addressJson   Json     @map("address_json")
+  /// 物流信息 JSON
+  logisticsJson Json?    @map("logistics_json")
+  /// 创建时间
+  createdAt     DateTime @default(now()) @map("created_at")
+  /// 更新时间
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   user         User                   @relation(fields: [userId], references: [id])
   items        OrderItem[]
@@ -142,14 +321,22 @@ model Order {
   @@map("orders")
 }
 
+/// 订单商品行
 model OrderItem {
-  id         Int    @id @default(autoincrement())
-  orderId    Int    @map("order_id")
-  skuId      Int    @map("sku_id")
-  spuTitle   String @map("spu_title") @db.VarChar(255)
-  specsJson  Json   @map("specs_json")
-  unitPrice  Int    @map("unit_price")
-  quantity   Int
+  /// 订单行主键 ID
+  id        Int    @id @default(autoincrement())
+  /// 订单 ID
+  orderId   Int    @map("order_id")
+  /// SKU ID
+  skuId     Int    @map("sku_id")
+  /// 下单时 SPU 标题快照
+  spuTitle  String @map("spu_title") @db.VarChar(255)
+  /// 规格快照 JSON
+  specsJson Json   @map("specs_json")
+  /// 成交单价，分
+  unitPrice Int    @map("unit_price")
+  /// 购买数量
+  quantity  Int   
 
   order Order @relation(fields: [orderId], references: [id])
   sku   Sku   @relation(fields: [skuId], references: [id])
@@ -158,14 +345,22 @@ model OrderItem {
   @@map("order_items")
 }
 
+/// 订单状态变更日志
 model OrderStatusLog {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
-  fromStatus String? @map("from_status") @db.VarChar(32)
-  toStatus  String   @map("to_status") @db.VarChar(32)
-  operator  String?  @db.VarChar(64)
-  remark    String?  @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at")
+  /// 日志主键 ID
+  id         Int      @id @default(autoincrement())
+  /// 订单 ID
+  orderId    Int      @map("order_id")
+  /// 原状态
+  fromStatus String?  @map("from_status") @db.VarChar(32)
+  /// 新状态
+  toStatus   String   @map("to_status") @db.VarChar(32)
+  /// 操作人
+  operator   String?  @db.VarChar(64)
+  /// 备注
+  remark     String?  @db.VarChar(255)
+  /// 创建时间
+  createdAt  DateTime @default(now()) @map("created_at")
 
   order Order @relation(fields: [orderId], references: [id])
 
@@ -173,12 +368,18 @@ model OrderStatusLog {
   @@map("order_status_logs")
 }
 
+/// 库存预占记录（待支付）
 model InventoryReservation {
-  id        Int      @id @default(autoincrement())
-  orderId   Int      @map("order_id")
-  skuId     Int      @map("sku_id")
-  quantity  Int
-  expireAt  DateTime @map("expire_at")
+  /// 预占记录 ID
+  id       Int      @id @default(autoincrement())
+  /// 订单 ID
+  orderId  Int      @map("order_id")
+  /// SKU ID
+  skuId    Int      @map("sku_id")
+  /// 预占数量
+  quantity Int     
+  /// 过期时间
+  expireAt DateTime @map("expire_at")
 
   order Order @relation(fields: [orderId], references: [id])
   sku   Sku   @relation(fields: [skuId], references: [id])
@@ -187,16 +388,26 @@ model InventoryReservation {
   @@map("inventory_reservations")
 }
 
+/// 支付单
 model Payment {
-  id         Int      @id @default(autoincrement())
-  paymentNo  String   @unique @map("payment_no") @db.VarChar(32)
-  orderId    Int      @unique @map("order_id")
-  channel    String   @db.VarChar(32)
-  amount     Int
-  status     String   @default("INIT") @db.VarChar(32)
-  notifyRaw  Json?    @map("notify_raw")
-  paidAt     DateTime? @map("paid_at")
-  createdAt  DateTime @default(now()) @map("created_at")
+  /// 支付单主键 ID
+  id        Int       @id @default(autoincrement())
+  /// 支付流水号
+  paymentNo String    @unique @map("payment_no") @db.VarChar(32)
+  /// 订单 ID
+  orderId   Int       @unique @map("order_id")
+  /// 支付渠道 ALIPAY / WECHAT
+  channel   String    @db.VarChar(32)
+  /// 支付金额，分
+  amount    Int      
+  /// 支付状态 INIT / SUCCESS / CLOSED
+  status    String    @default("INIT") @db.VarChar(32)
+  /// 第三方回调原始 JSON
+  notifyRaw Json?     @map("notify_raw")
+  /// 支付成功时间
+  paidAt    DateTime? @map("paid_at")
+  /// 创建时间
+  createdAt DateTime  @default(now()) @map("created_at")
 
   order Order @relation(fields: [orderId], references: [id])
 

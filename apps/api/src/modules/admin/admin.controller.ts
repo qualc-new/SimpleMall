@@ -9,8 +9,12 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { SpuStatus } from '@simplemall/shared';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AdminTypeGuard } from '../../common/guards/admin-type.guard';
@@ -22,6 +26,14 @@ import { OrderService } from '../order/order.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from '../catalog/dto/admin-category.dto';
 import { AdminCreateSpuDto, AdminUpdateSpuDto } from '../catalog/dto/admin-spu.dto';
+import {
+  CreateBrandDto,
+  CreateExpressTemplateDto,
+  CreateTagDto,
+  UpdateBrandDto,
+  UpdateExpressTemplateDto,
+} from '../catalog/dto/admin-meta.dto';
+import { AdminUploadService } from './admin-upload.service';
 
 @Controller('admin')
 @UseGuards(AdminTypeGuard)
@@ -32,6 +44,7 @@ export class AdminController {
     private catalog: AdminCatalogService,
     private order: OrderService,
     private prisma: PrismaService,
+    private upload: AdminUploadService,
   ) {}
 
   @Get('orders')
@@ -68,6 +81,67 @@ export class AdminController {
     return this.order.processRefund(id, body.approve);
   }
 
+  @Get('brands')
+  brands() {
+    return this.catalog.listBrands();
+  }
+
+  @Post('brands')
+  createBrand(@Body() dto: CreateBrandDto) {
+    return this.catalog.createBrand(dto.name);
+  }
+
+  @Put('brands/:id')
+  updateBrand(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBrandDto) {
+    return this.catalog.updateBrand(id, dto.name);
+  }
+
+  @Delete('brands/:id')
+  deleteBrand(@Param('id', ParseIntPipe) id: number) {
+    return this.catalog.deleteBrand(id);
+  }
+
+  @Get('express-templates')
+  expressTemplates() {
+    return this.catalog.listExpressTemplates();
+  }
+
+  @Post('express-templates')
+  createExpress(@Body() dto: CreateExpressTemplateDto) {
+    return this.catalog.createExpressTemplate(dto);
+  }
+
+  @Put('express-templates/:id')
+  updateExpress(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateExpressTemplateDto) {
+    return this.catalog.updateExpressTemplate(id, dto);
+  }
+
+  @Delete('express-templates/:id')
+  deleteExpress(@Param('id', ParseIntPipe) id: number) {
+    return this.catalog.deleteExpressTemplate(id);
+  }
+
+  @Get('tags')
+  searchTags(@Query('q') q?: string) {
+    return this.catalog.searchTags(q);
+  }
+
+  @Post('tags')
+  createTag(@Body() dto: CreateTagDto) {
+    return this.catalog.ensureTag(dto.name);
+  }
+
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    return this.upload.saveImage(file);
+  }
+
   @Get('categories')
   categories() {
     return this.prisma.category.findMany({ orderBy: { sort: 'asc' } });
@@ -90,8 +164,22 @@ export class AdminController {
   }
 
   @Get('spus')
-  spus(@Query('page') page?: string) {
-    return this.catalog.listSpusAdmin(page ? Number(page) : 1);
+  spus(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('status') status?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('brandId') brandId?: string,
+    @Query('keyword') keyword?: string,
+  ) {
+    return this.catalog.listSpusAdmin({
+      page: page ? Number(page) : 1,
+      pageSize: pageSize ? Number(pageSize) : 20,
+      status: status || undefined,
+      categoryId: categoryId ? Number(categoryId) : undefined,
+      brandId: brandId ? Number(brandId) : undefined,
+      keyword: keyword || undefined,
+    });
   }
 
   @Get('spus/:id')

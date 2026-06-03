@@ -1,3 +1,9 @@
+import {
+  clearStoredAdmin,
+  getStoredAdminJson,
+  setStoredAdminJson,
+} from '../services/authStorage';
+
 export interface AdminInfo {
   id: number;
   username: string;
@@ -8,12 +14,12 @@ let adminCache: AdminInfo | null = null;
 
 export function setAdmin(admin: AdminInfo) {
   adminCache = admin;
-  sessionStorage.setItem('admin_user', JSON.stringify(admin));
+  setStoredAdminJson(JSON.stringify(admin));
 }
 
 export function getAdmin(): AdminInfo | null {
   if (adminCache) return adminCache;
-  const raw = sessionStorage.getItem('admin_user');
+  const raw = getStoredAdminJson();
   if (!raw) return null;
   adminCache = JSON.parse(raw) as AdminInfo;
   return adminCache;
@@ -21,5 +27,5 @@ export function getAdmin(): AdminInfo | null {
 
 export function clearAdmin() {
   adminCache = null;
-  sessionStorage.removeItem('admin_user');
+  clearStoredAdmin();
 }

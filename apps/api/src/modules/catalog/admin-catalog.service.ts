@@ -5,6 +5,12 @@ import { syncSpuStatusAfterStockChange } from './spu-status.helper';
 import { BizError } from '../../common/exceptions/business.exception';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/admin-category.dto';
 import { AdminCreateSpuDto, AdminUpdateSpuDto } from './dto/admin-spu.dto';
+import {
+  buildSpuCreateData,
+  buildSpuUpdateData,
+  formatSpuExtra,
+  resolveCategoryMeta,
+} from './spu-meta.helper';
 
 @Injectable()
 export class AdminCatalogService {
@@ -45,22 +51,110 @@ export class AdminCatalogService {
     return { ok: true };
   }
 
+  listBrands() {
+    return this.prisma.brand.findMany({ orderBy: { id: 'asc' } });
+  }
+
+  createBrand(name: string) {
+    return this.prisma.brand.create({ data: { name } });
+  }
+
+  async updateBrand(id: number, name: string) {
+    const row = await this.prisma.brand.findUnique({ where: { id } });
+    if (!row) throw BizError.notFound();
+    return this.prisma.brand.update({ where: { id }, data: { name } });
+  }
+
+  async deleteBrand(id: number) {
+    const used = await this.prisma.spu.count({ where: { brandId: id } });
+    if (used > 0) throw BizError.notFound('品牌下存在商品，无法删除');
+    await this.prisma.brand.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  listExpressTemplates() {
+    return this.prisma.expressTemplate.findMany({ orderBy: { id: 'asc' } });
+  }
+
+  createExpressTemplate(data: {
+    name: string;
+    firstFee?: number;
+    continueFee?: number;
+    remark?: string;
+  }) {
+    return this.prisma.expressTemplate.create({
+      data: {
+        name: data.name,
+        firstFee: data.firstFee ?? 0,
+        continueFee: data.continueFee ?? 0,
+        remark: data.remark ?? '',
+      },
+    });
+  }
+
+  async updateExpressTemplate(
+    id: number,
+    data: { name?: string; firstFee?: number; continueFee?: number; remark?: string },
+  ) {
+    const row = await this.prisma.expressTemplate.findUnique({ where: { id } });
+    if (!row) throw BizError.notFound();
+    return this.prisma.expressTemplate.update({ where: { id }, data });
+  }
+
+  async deleteExpressTemplate(id: number) {
+    const used = await this.prisma.spu.count({ where: { expressId: id } });
+    if (used > 0) throw BizError.notFound('模板已被商品引用，无法删除');
+    await this.prisma.expressTemplate.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  /** 标签检索（词库 + 已用于商品的 tag_list） */
+  async searchTags(keyword?: string, limit = 20) {
+    const q = keyword?.trim();
+    const fromDb = await this.prisma.tag.findMany({
+      where: q ? { name: { contains: q } } : undefined,
+      take: limit,
+      orderBy: { name: 'asc' },
+    });
+    const names = new Set(fromDb.map((t) => t.name));
+    if (q && names.size < limit) {
+      const spus = await this.prisma.spu.findMany({
+        where: { tagList: { contains: q } },
+        select: { tagList: true },
+        take: 50,
+      });
+      for (const s of spus) {
+        s.tagList.split(/[,，]/).forEach((t) => {
+          const n = t.trim();
+          if (n && (!q || n.includes(q))) names.add(n);
+        });
+      }
+    }
+    return [...names].slice(0, limit).map((name) => ({ name }));
+  }
+
+  async ensureTag(name: string) {
+    const n = name.trim();
+    if (!n) throw BizError.notFound('标签名不能为空');
+    return this.prisma.tag.upsert({
+      where: { name: n },
+      update: {},
+      create: { name: n },
+    });
+  }
+
   async createSpu(dto: AdminCreateSpuDto) {
     const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
     if (!cat) throw BizError.notFound('类目不存在');
     if (!dto.skus?.length) throw BizError.notFound('至少一个 SKU');
+    if (dto.brandId) {
+      const brand = await this.prisma.brand.findUnique({ where: { id: dto.brandId } });
+      if (!brand) throw BizError.notFound('品牌不存在');
+    }
 
     return this.prisma.$transaction(async (tx) => {
-      const spu = await tx.spu.create({
-        data: {
-          categoryId: dto.categoryId,
-          title: dto.title,
-          description: dto.description,
-          mainImage: dto.mainImage,
-          imagesJson: dto.images,
-          status: dto.status,
-        },
-      });
+      const data = await buildSpuCreateData(this.prisma, dto);
+      const spu = await tx.spu.create({ data });
       await tx.sku.createMany({
         data: dto.skus.map((s) => ({
           spuId: spu.id,
@@ -71,33 +165,26 @@ export class AdminCatalogService {
           status: 'ENABLED',
         })),
       });
-      const created = await tx.spu.findUnique({ where: { id: spu.id }, include: { skus: true } });
-      if (created) {
-        const next = syncSpuStatusByStock(created.status, totalAvailableStock(created.skus));
-        if (next !== created.status) {
-          await tx.spu.update({ where: { id: spu.id }, data: { status: next } });
-        }
-      }
-      return tx.spu.findUnique({ where: { id: spu.id }, include: { skus: true } });
+      await syncSpuStatusAfterStockChange(this.prisma, spu.id);
+      return this.getSpuAdmin(spu.id);
     });
   }
 
   async updateSpu(id: number, dto: AdminUpdateSpuDto) {
     const spu = await this.prisma.spu.findUnique({ where: { id }, include: { skus: true } });
     if (!spu) throw BizError.notFound();
+    if (dto.brandId) {
+      const brand = await this.prisma.brand.findUnique({ where: { id: dto.brandId } });
+      if (!brand) throw BizError.notFound('品牌不存在');
+    }
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.spu.update({
-        where: { id },
-        data: {
-          ...(dto.categoryId != null && { categoryId: dto.categoryId }),
-          ...(dto.title != null && { title: dto.title }),
-          ...(dto.description != null && { description: dto.description }),
-          ...(dto.mainImage != null && { mainImage: dto.mainImage }),
-          ...(dto.images != null && { imagesJson: dto.images }),
-          ...(dto.status != null && { status: dto.status }),
-        },
-      });
+      const catMeta =
+        dto.categoryId != null ? await resolveCategoryMeta(this.prisma, dto.categoryId) : undefined;
+      const updateData = buildSpuUpdateData(dto, catMeta, dto.skus);
+      if (Object.keys(updateData).length > 0) {
+        await tx.spu.update({ where: { id }, data: updateData });
+      }
 
       if (dto.skus) {
         const incomingIds = dto.skus.filter((s) => s.id).map((s) => s.id!);
@@ -135,7 +222,7 @@ export class AdminCatalogService {
     });
 
     await syncSpuStatusAfterStockChange(this.prisma, id);
-    return this.prisma.spu.findUnique({ where: { id }, include: { skus: true, category: true } });
+    return this.getSpuAdmin(id);
   }
 
   async patchSpuStatus(id: number, status: SpuStatus) {
@@ -145,10 +232,11 @@ export class AdminCatalogService {
     if (status === SpuStatus.ON_SALE) {
       next = syncSpuStatusByStock(SpuStatus.ON_SALE, totalAvailableStock(spu.skus));
     }
+    const putawayTime = next === SpuStatus.ON_SALE && !spu.putawayTime ? new Date() : spu.putawayTime;
     return this.prisma.spu.update({
       where: { id },
-      data: { status: next },
-      include: { skus: true, category: true },
+      data: { status: next, putawayTime },
+      include: { skus: true, category: true, brand: true },
     });
   }
 
@@ -156,19 +244,68 @@ export class AdminCatalogService {
     return syncSpuStatusAfterStockChange(this.prisma, spuId);
   }
 
-  listSpusAdmin(page = 1, pageSize = 20) {
-    return this.prisma.spu.findMany({
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: { skus: true, category: true },
-      orderBy: { id: 'desc' },
-    });
+  /** 管理端商品分页列表（支持状态/类目/品牌/关键词筛选） */
+  async listSpusAdmin(query: {
+    page?: number;
+    pageSize?: number;
+    status?: string;
+    categoryId?: number;
+    brandId?: number;
+    keyword?: string;
+  }) {
+    const page = Math.max(1, query.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+    const where: {
+      status?: string;
+      categoryId?: number;
+      brandId?: number;
+      OR?: Array<Record<string, unknown>>;
+    } = {};
+
+    if (query.status) where.status = query.status;
+    if (query.categoryId) where.categoryId = query.categoryId;
+    if (query.brandId) where.brandId = query.brandId;
+
+    const keyword = query.keyword?.trim();
+    if (keyword) {
+      where.OR = [
+        { title: { contains: keyword } },
+        { subtitle: { contains: keyword } },
+        { shortName: { contains: keyword } },
+        { goodsSn: { contains: keyword } },
+      ];
+    }
+
+    const [list, total] = await Promise.all([
+      this.prisma.spu.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          skus: { orderBy: { id: 'asc' } },
+          category: true,
+          brand: true,
+        },
+        orderBy: [{ sort: 'desc' }, { id: 'desc' }],
+      }),
+      this.prisma.spu.count({ where }),
+    ]);
+
+    return { list, total, page, pageSize };
   }
 
-  getSpuAdmin(id: number) {
-    return this.prisma.spu.findUnique({
+  async getSpuAdmin(id: number) {
+    const spu = await this.prisma.spu.findUnique({
       where: { id },
-      include: { skus: true, category: true },
+      include: { skus: true, category: true, brand: true },
     });
+    if (!spu) return null;
+    const images = Array.isArray(spu.imagesJson) ? spu.imagesJson : [];
+    return {
+      ...spu,
+      images,
+      ...formatSpuExtra(spu),
+      brandName: spu.brand?.name,
+    };
   }
 }

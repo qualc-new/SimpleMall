@@ -206,6 +206,52 @@ async function main() {
 
   await prisma.spu.updateMany({ where: { status: 'DRAFT' }, data: { status: SpuStatus.NOT_LISTED } });
 
+  const brands = [
+    { id: 1, name: '简约造物' },
+    { id: 2, name: '数码优选' },
+  ];
+  for (const b of brands) {
+    await prisma.brand.upsert({
+      where: { id: b.id },
+      update: { name: b.name },
+      create: b,
+    });
+  }
+
+  const expressTemplates = [
+    { id: 1, name: '全国包邮', firstFee: 0, continueFee: 0, remark: '全场包邮' },
+    { id: 2, name: '标准快递', firstFee: 800, continueFee: 300, remark: '首件8元，续件3元' },
+    { id: 3, name: '重货物流', firstFee: 1500, continueFee: 800, remark: '大件/重货' },
+  ];
+  for (const t of expressTemplates) {
+    await prisma.expressTemplate.upsert({
+      where: { id: t.id },
+      update: t,
+      create: t,
+    });
+  }
+
+  for (const tagName of ['新品', '爆款', '热销', '限时', '包邮']) {
+    await prisma.tag.upsert({
+      where: { name: tagName },
+      update: {},
+      create: { name: tagName },
+    });
+  }
+
+  const catMeta = (categoryId: number) => {
+    const leaf = categories.find((c) => c.id === categoryId);
+    if (!leaf?.parentId) {
+      return { cate1Id: categoryId, cate2Id: 0, cate3Id: categoryId, categoryPath: `${categoryId}` };
+    }
+    return {
+      cate1Id: leaf.parentId,
+      cate2Id: categoryId,
+      cate3Id: categoryId,
+      categoryPath: `${leaf.parentId},${categoryId}`,
+    };
+  };
+
   for (const c of categories) {
     await prisma.category.upsert({
       where: { id: c.id },
@@ -228,6 +274,29 @@ async function main() {
   }
 
   for (const s of spus) {
+    const meta = catMeta(s.categoryId);
+    const totalStock = s.skus.reduce((n, k) => n + k.stock, 0);
+    const minPrice = Math.min(...s.skus.map((k) => k.price));
+    const specType = s.skus.length > 1 || Object.keys(s.skus[0].specsJson).length > 0 ? 1 : 0;
+    const extras = {
+      goodsSn: `SM${String(s.id).padStart(6, '0')}`,
+      shortName: s.title.slice(0, 20),
+      subtitle: s.description.slice(0, 80),
+      brandId: s.categoryId <= 3 ? 1 : s.categoryId <= 6 ? 2 : null,
+      ...meta,
+      specType,
+      tagList: s.id <= 3 ? '新品,爆款' : s.id <= 6 ? '热销' : '',
+      marketPrice: Math.round(minPrice * 1.2),
+      costPrice: Math.round(minPrice * 0.6),
+      vipPrice: Math.round(minPrice * 0.95),
+      totalStock,
+      warnStock: 10,
+      isNew: s.id <= 2,
+      isHot: s.id >= 5 && s.id <= 8,
+      isRecommend: s.id <= 4,
+      sort: 100 - s.id,
+      putawayTime: new Date(),
+    };
     await prisma.spu.upsert({
       where: { id: s.id },
       update: {
@@ -237,6 +306,7 @@ async function main() {
         mainImage: s.mainImage,
         imagesJson: s.imagesJson,
         status: SpuStatus.ON_SALE,
+        ...extras,
       },
       create: {
         id: s.id,
@@ -246,6 +316,7 @@ async function main() {
         mainImage: s.mainImage,
         imagesJson: s.imagesJson,
         status: SpuStatus.ON_SALE,
+        ...extras,
       },
     });
 
