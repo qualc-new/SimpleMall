@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  phone     String   @unique @db.VarChar(20)
+  password  String   @db.VarChar(255)
+  nickname  String?  @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cartItems  CartItem[]
+  orders     Order[]
+  addresses  Address[]
+
+  @@map("users")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(64)
+  password  String   @db.VarChar(255)
+  role      String   @db.VarChar(32)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admins")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  parentId  Int?     @map("parent_id")
+  name      String   @db.VarChar(128)
+  level     Int      @default(1)
+  sort      Int      @default(0)
+  path      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parent Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  spus     Spu[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Spu {
+  id          Int      @id @default(autoincrement())
+  categoryId  Int      @map("category_id")
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  mainImage   String   @map("main_image") @db.VarChar(512)
+  imagesJson  Json     @default("[]") @map("images_json")
+  status      String   @default("DRAFT") @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category Category @relation(fields: [categoryId], references: [id])
+  skus     Sku[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@map("spus")
+}
+
+model Sku {
+  id        Int      @id @default(autoincrement())
+  spuId     Int      @map("spu_id")
+  specsJson Json     @map("specs_json")
+  price     Int
+  stock     Int      @default(0)
+  reserved  Int      @default(0)
+  version   Int      @default(0)
+  barcode   String?  @db.VarChar(64)
+  status    String   @default("ENABLED") @db.VarChar(32)
+
+  spu              Spu                    @relation(fields: [spuId], references: [id])
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  reservations     InventoryReservation[]
+
+  @@index([spuId])
+  @@map("skus")
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @map("user_id")
+  skuId     Int     @map("sku_id")
+  quantity  Int     @default(1)
+  selected  Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id])
+  sku  Sku  @relation(fields: [skuId], references: [id])
+
+  @@unique([userId, skuId])
+  @@map("cart_items")
+}
+
+model Address {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @map("user_id")
+  name      String  @db.VarChar(64)
+  phone     String  @db.VarChar(20)
+  province  String  @db.VarChar(64)
+  city      String  @db.VarChar(64)
+  district  String  @db.VarChar(64)
+  detail    String  @db.VarChar(255)
+  isDefault Boolean @default(false) @map("is_default")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  orderNo     String   @unique @map("order_no") @db.VarChar(32)
+  userId      Int      @map("user_id")
+  status      String   @db.VarChar(32)
+  totalAmount Int      @map("total_amount")
+  payAmount   Int      @map("pay_amount")
+  remark      String?  @db.VarChar(255)
+  addressJson Json     @map("address_json")
+  logisticsJson Json?  @map("logistics_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user         User                   @relation(fields: [userId], references: [id])
+  items        OrderItem[]
+  statusLogs   OrderStatusLog[]
+  payment      Payment?
+  reservations InventoryReservation[]
+
+  @@index([userId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int    @id @default(autoincrement())
+  orderId    Int    @map("order_id")
+  skuId      Int    @map("sku_id")
+  spuTitle   String @map("spu_title") @db.VarChar(255)
+  specsJson  Json   @map("specs_json")
+  unitPrice  Int    @map("unit_price")
+  quantity   Int
+
+  order Order @relation(fields: [orderId], references: [id])
+  sku   Sku   @relation(fields: [skuId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderStatusLog {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  fromStatus String? @map("from_status") @db.VarChar(32)
+  toStatus  String   @map("to_status") @db.VarChar(32)
+  operator  String?  @db.VarChar(64)
+  remark    String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_status_logs")
+}
+
+model InventoryReservation {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  skuId     Int      @map("sku_id")
+  quantity  Int
+  expireAt  DateTime @map("expire_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+  sku   Sku   @relation(fields: [skuId], references: [id])
+
+  @@index([orderId])
+  @@map("inventory_reservations")
+}
+
+model Payment {
+  id         Int      @id @default(autoincrement())
+  paymentNo  String   @unique @map("payment_no") @db.VarChar(32)
+  orderId    Int      @unique @map("order_id")
+  channel    String   @db.VarChar(32)
+  amount     Int
+  status     String   @default("INIT") @db.VarChar(32)
+  notifyRaw  Json?    @map("notify_raw")
+  paidAt     DateTime? @map("paid_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}

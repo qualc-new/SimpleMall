@@ -1,0 +1,35 @@
+import axios from 'axios';
+
+const TOKEN_KEY = 'admin_token';
+
+export const http = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE || '/api/v1',
+  timeout: 15000,
+});
+
+http.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+http.interceptors.response.use((res) => {
+  const body = res.data as { code: number; message: string; data: unknown };
+  if (body.code !== 0) {
+    return Promise.reject(new Error(body.message || '请求失败'));
+  }
+  res.data = body.data;
+  return res;
+});
+
+export function setToken(token: string) {
+  sessionStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken() {
+  sessionStorage.removeItem(TOKEN_KEY);
+}
+
+export function getToken() {
+  return sessionStorage.getItem(TOKEN_KEY);
+}
