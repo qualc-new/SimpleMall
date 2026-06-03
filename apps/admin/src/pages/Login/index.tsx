@@ -13,8 +13,12 @@ export default function LoginPage() {
         '/admin/auth/login',
         values,
       );
-      setToken(res.data.accessToken);
-      setAdmin(res.data.admin);
+      const data = res.data as { accessToken: string; admin: { id: number; username: string; role: string } };
+      if (!data?.accessToken) {
+        throw new Error('登录响应异常，请确认 API 已启动且已执行 pnpm db:seed');
+      }
+      setToken(data.accessToken);
+      setAdmin(data.admin);
       message.success('登录成功');
       navigate('/');
     } catch (e: unknown) {

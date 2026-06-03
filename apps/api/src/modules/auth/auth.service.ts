@@ -49,7 +49,7 @@ export class AuthService {
   async adminLogin(dto: AdminLoginDto) {
     const admin = await this.prisma.admin.findUnique({ where: { username: dto.username } });
     if (!admin || !(await bcrypt.compare(dto.password, admin.password))) {
-      throw BizError.unauthorized();
+      throw new BusinessException(40100, '用户名或密码错误', HttpStatus.UNAUTHORIZED);
     }
     const accessToken = this.jwt.sign({
       sub: admin.id,

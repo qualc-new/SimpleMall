@@ -1,5 +1,7 @@
 node_modules
+.dev
 dist
+packages/shared/dist
 .output
 .nuxt
 .env

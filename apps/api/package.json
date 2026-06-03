@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "predev": "pnpm --filter @simplemall/shared build",
     "dev": "nest start --watch",
     "start": "node dist/main",
     "prisma:generate": "prisma generate",
