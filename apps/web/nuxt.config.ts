@@ -10,6 +10,7 @@ export default defineNuxtConfig({
     appManifest: false,
   },
   modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss'],
+  css: ['~/assets/css/breakpoints.css', '~/assets/css/layout.css', '~/assets/css/header.css'],
   vite: {
     resolve: {
       alias: {

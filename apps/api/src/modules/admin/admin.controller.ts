@@ -30,6 +30,9 @@ import {
   CreateBrandDto,
   CreateExpressTemplateDto,
   CreateTagDto,
+  CreateServiceGuaranteeDto,
+  UpdateTagDto,
+  UpdateServiceGuaranteeDto,
   UpdateBrandDto,
   UpdateExpressTemplateDto,
 } from '../catalog/dto/admin-meta.dto';
@@ -122,13 +125,48 @@ export class AdminController {
   }
 
   @Get('tags')
-  searchTags(@Query('q') q?: string) {
-    return this.catalog.searchTags(q);
+  listTags(@Query('q') q?: string, @Query('for') forSpu?: string) {
+    if (forSpu === 'spu') return this.catalog.searchTagsForSpu(q);
+    return this.catalog.listTagsAdmin();
   }
 
   @Post('tags')
   createTag(@Body() dto: CreateTagDto) {
-    return this.catalog.ensureTag(dto.name);
+    return this.catalog.createTag(dto);
+  }
+
+  @Put('tags/:id')
+  updateTag(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTagDto) {
+    return this.catalog.updateTag(id, dto);
+  }
+
+  @Delete('tags/:id')
+  deleteTag(@Param('id', ParseIntPipe) id: number) {
+    return this.catalog.deleteTag(id);
+  }
+
+  @Get('service-guarantees')
+  listServiceGuarantees(@Query('q') q?: string, @Query('for') forSpu?: string) {
+    if (forSpu === 'spu') return this.catalog.searchServiceGuaranteesForSpu(q);
+    return this.catalog.listServiceGuaranteesAdmin();
+  }
+
+  @Post('service-guarantees')
+  createServiceGuarantee(@Body() dto: CreateServiceGuaranteeDto) {
+    return this.catalog.createServiceGuarantee(dto);
+  }
+
+  @Put('service-guarantees/:id')
+  updateServiceGuarantee(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateServiceGuaranteeDto,
+  ) {
+    return this.catalog.updateServiceGuarantee(id, dto);
+  }
+
+  @Delete('service-guarantees/:id')
+  deleteServiceGuarantee(@Param('id', ParseIntPipe) id: number) {
+    return this.catalog.deleteServiceGuarantee(id);
   }
 
   @Post('upload')

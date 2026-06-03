@@ -1,0 +1,32 @@
+/**
+ * Web 响应式断点参考（桌面优先，禁止 min/max/clamp 函数）
+ * 默认样式 = 1920px 基准，无需 media
+ */
+
+/* 1440px */
+@media (max-width: 1440px) {
+}
+
+/* 1366px */
+@media (max-width: 1366px) {
+}
+
+/* 1280px */
+@media (max-width: 1280px) {
+}
+
+/* 1024px */
+@media (max-width: 1024px) {
+}
+
+/* 768px */
+@media (max-width: 768px) {
+}
+
+/* 480px */
+@media (max-width: 480px) {
+}
+
+/* 375px */
+@media (max-width: 375px) {
+}

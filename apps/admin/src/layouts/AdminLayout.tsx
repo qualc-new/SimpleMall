@@ -20,6 +20,12 @@ const menuItems: MenuProps['items'] = [
   { key: '/', icon: <DashboardOutlined />, label: <Link to="/">仪表盘</Link> },
   { key: '/categories', icon: <AppstoreOutlined />, label: <Link to="/categories">类目管理</Link> },
   { key: '/brands', icon: <AppstoreOutlined />, label: <Link to="/brands">品牌管理</Link> },
+  { key: '/tags', icon: <AppstoreOutlined />, label: <Link to="/tags">标签管理</Link> },
+  {
+    key: '/service-guarantees',
+    icon: <AppstoreOutlined />,
+    label: <Link to="/service-guarantees">服务保障</Link>,
+  },
   { key: '/express-templates', icon: <AppstoreOutlined />, label: <Link to="/express-templates">运费模板</Link> },
   { key: '/products', icon: <ShoppingOutlined />, label: <Link to="/products">商品列表</Link> },
   { key: '/orders', icon: <ShoppingCartOutlined />, label: <Link to="/orders">订单列表</Link> },

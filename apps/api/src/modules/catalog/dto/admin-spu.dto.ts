@@ -60,6 +60,10 @@ class SpuGoodsFieldsDto {
   tagList?: string;
 
   @IsOptional()
+  @IsString()
+  serviceList?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   marketPrice?: number;

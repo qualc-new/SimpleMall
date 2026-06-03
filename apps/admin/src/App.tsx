@@ -8,6 +8,8 @@ import SpuFormPage from './pages/Product/SpuForm';
 import CategoryListPage from './pages/Category/List';
 import BrandListPage from './pages/Brand/List';
 import ExpressListPage from './pages/Express/List';
+import TagListPage from './pages/Tag/List';
+import ServiceGuaranteeListPage from './pages/ServiceGuarantee/List';
 import OrderDetailPage from './pages/Order/Detail';
 import MockPayPage from './pages/DevTools/MockPay';
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -34,6 +36,8 @@ export default function App() {
           <Route path="categories" element={<CategoryListPage />} />
           <Route path="brands" element={<BrandListPage />} />
           <Route path="express-templates" element={<ExpressListPage />} />
+          <Route path="tags" element={<TagListPage />} />
+          <Route path="service-guarantees" element={<ServiceGuaranteeListPage />} />
           <Route path="dev/mock-pay" element={<MockPayPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

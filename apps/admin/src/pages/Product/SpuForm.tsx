@@ -8,6 +8,7 @@ import ImageUploadField from '../../components/ImageUploadField';
 import RichTextEditor from '../../components/RichTextEditor';
 import SpecMatrixEditor, { SkuRow } from '../../components/SpecMatrixEditor';
 import TagInput from '../../components/TagInput';
+import ServiceGuaranteeInput from '../../components/ServiceGuaranteeInput';
 import PageHeader from '../../components/PageHeader';
 import { SPU_STATUS_OPTIONS } from '../../constants/status';
 import { http } from '../../services/http';
@@ -54,6 +55,7 @@ type SpuDetail = {
   expressId?: number;
   attrJson?: Record<string, unknown>;
   tagList?: string[] | string;
+  serviceList?: string[] | string;
   marketPrice?: number;
   costPrice?: number;
   vipPrice?: number;
@@ -134,6 +136,7 @@ export default function SpuFormPage() {
           brandId: s.brandId,
           attrText: attrToText(s.attrJson),
           tags: tagsToList(s.tagList),
+          services: tagsToList(s.serviceList),
           marketPriceYuan: centToYuan(s.marketPrice),
           costPriceYuan: centToYuan(s.costPrice),
           vipPriceYuan: centToYuan(s.vipPrice),
@@ -182,6 +185,7 @@ export default function SpuFormPage() {
       brandId: v.brandId,
       attrJson: textToAttr(v.attrText as string),
       tagList: listToTags(v.tags as string[] | undefined),
+      serviceList: listToTags(v.services as string[] | undefined),
       marketPrice: yuanToCent(v.marketPriceYuan as number),
       costPrice: yuanToCent(v.costPriceYuan as number),
       vipPrice: yuanToCent(v.vipPriceYuan as number),
@@ -295,8 +299,23 @@ export default function SpuFormPage() {
             </Form.Item>
           </Col>
           <Col span={24}>
-            <Form.Item name="tags" label="标签" initialValue={[]}>
+            <Form.Item
+              name="tags"
+              label="标签"
+              initialValue={[]}
+              extra="请先在「标签管理」中创建并启用标签"
+            >
               <TagInput />
+            </Form.Item>
+          </Col>
+          <Col span={24}>
+            <Form.Item
+              name="services"
+              label="服务保障"
+              initialValue={[]}
+              extra="请先在「服务保障」中创建并启用，将展示在商城商品详情页"
+            >
+              <ServiceGuaranteeInput />
             </Form.Item>
           </Col>
           <Col span={12}>

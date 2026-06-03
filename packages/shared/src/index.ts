@@ -22,6 +22,7 @@ export enum PaymentStatus {
 }
 
 export * from './spu-status';
+export * from './tag-status';
 
 export enum AdminRole {
   SUPER = "SUPER",

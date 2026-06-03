@@ -1,4 +1,5 @@
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { TagStatus } from '@simplemall/shared';
 
 export class CreateBrandDto {
   @IsString()
@@ -52,4 +53,53 @@ export class UpdateExpressTemplateDto {
 export class CreateTagDto {
   @IsString()
   name: string;
+
+  @IsOptional()
+  @IsEnum(TagStatus)
+  status?: TagStatus;
+
+  @IsOptional()
+  @IsBoolean()
+  isHot?: boolean;
+}
+
+export class UpdateTagDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsEnum(TagStatus)
+  status?: TagStatus;
+
+  @IsOptional()
+  @IsBoolean()
+  isHot?: boolean;
+}
+
+export class CreateServiceGuaranteeDto {
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsEnum(TagStatus)
+  status?: TagStatus;
+
+  @IsOptional()
+  @IsInt()
+  sort?: number;
+}
+
+export class UpdateServiceGuaranteeDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsEnum(TagStatus)
+  status?: TagStatus;
+
+  @IsOptional()
+  @IsInt()
+  sort?: number;
 }

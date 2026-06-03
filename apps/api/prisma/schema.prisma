@@ -65,16 +65,38 @@ model Brand {
   @@map("brands")
 }
 
-/// 商品标签（管理端词库，SPU tag_list 可引用）
+/// 商品标签（管理端维护，SPU tag_list 存标签名称）
 model Tag {
   /// 标签主键 ID
   id        Int      @id @default(autoincrement())
   /// 标签名称
   name      String   @unique @db.VarChar(64)
+  /// 状态 ENABLED / DISABLED
+  status    String   @default("ENABLED") @db.VarChar(32)
+  /// 是否热门标签（展示在商城顶部）
+  isHot     Boolean  @default(false) @map("is_hot")
   /// 创建时间
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([status, isHot])
   @@map("tags")
+}
+
+/// 服务保障项（管理端维护，SPU service_list 存名称，C 端详情展示）
+model ServiceGuarantee {
+  /// 主键 ID
+  id        Int      @id @default(autoincrement())
+  /// 保障名称，如「破损包退」
+  name      String   @unique @db.VarChar(64)
+  /// 状态 ENABLED / DISABLED
+  status    String   @default("ENABLED") @db.VarChar(32)
+  /// 排序权重，越大越靠前
+  sort      Int      @default(0)
+  /// 创建时间
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([status, sort])
+  @@map("service_guarantees")
 }
 
 /// 运费模板
@@ -156,6 +178,8 @@ model Spu {
   attrJson     Json?     @map("attr_json")
   /// 标签，逗号分隔
   tagList      String    @default("") @map("tag_list") @db.VarChar(512)
+  /// 服务保障，逗号分隔
+  serviceList  String    @default("") @map("service_list") @db.VarChar(512)
   /// 市场价/划线价，单位：分
   marketPrice  Int       @default(0) @map("market_price")
   /// 成本价，单位：分

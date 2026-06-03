@@ -231,13 +231,36 @@ async function main() {
     });
   }
 
-  for (const tagName of ['新品', '爆款', '热销', '限时', '包邮']) {
+  const tagSeed = [
+    { name: '新品', isHot: true, status: 'ENABLED' },
+    { name: '爆款', isHot: true, status: 'ENABLED' },
+    { name: '热销', isHot: true, status: 'ENABLED' },
+    { name: '限时', isHot: false, status: 'ENABLED' },
+    { name: '包邮', isHot: true, status: 'ENABLED' },
+  ];
+  for (const t of tagSeed) {
     await prisma.tag.upsert({
-      where: { name: tagName },
-      update: {},
-      create: { name: tagName },
+      where: { name: t.name },
+      update: { isHot: t.isHot, status: t.status },
+      create: t,
     });
   }
+
+  const serviceGuaranteeSeed = [
+    { name: '破损包退', sort: 40, status: 'ENABLED' },
+    { name: '假一赔十', sort: 30, status: 'ENABLED' },
+    { name: '退货宝', sort: 20, status: 'ENABLED' },
+    { name: '极速退款', sort: 10, status: 'ENABLED' },
+  ];
+  for (const g of serviceGuaranteeSeed) {
+    await prisma.serviceGuarantee.upsert({
+      where: { name: g.name },
+      update: { sort: g.sort, status: g.status },
+      create: g,
+    });
+  }
+
+  const defaultServiceList = serviceGuaranteeSeed.map((g) => g.name).join(',');
 
   const catMeta = (categoryId: number) => {
     const leaf = categories.find((c) => c.id === categoryId);
@@ -286,6 +309,7 @@ async function main() {
       ...meta,
       specType,
       tagList: s.id <= 3 ? '新品,爆款' : s.id <= 6 ? '热销' : '',
+      serviceList: defaultServiceList,
       marketPrice: Math.round(minPrice * 1.2),
       costPrice: Math.round(minPrice * 0.6),
       vipPrice: Math.round(minPrice * 0.95),

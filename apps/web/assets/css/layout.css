@@ -1,0 +1,74 @@
+/**
+ * 全站内容区宽度（桌面优先，禁止 min/max/clamp 函数）
+ * 默认 1920：主栏最大 1280px
+ */
+
+.site-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 1280px;
+}
+
+@media (max-width: 1440px) {
+  .site-container {
+    max-width: 1200px;
+  }
+}
+
+@media (max-width: 1366px) {
+  .site-container {
+    max-width: 1120px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .site-container {
+    max-width: 1024px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .site-container {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 375px) {
+  .site-container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* 首页内容区最小宽度：大屏保证栅格不挤扁，≤1024 取消避免横向滚动 */
+.home-content {
+  width: 100%;
+  min-width: 1200px;
+}
+
+@media (max-width: 1440px) {
+  .home-content {
+    min-width: 1100px;
+  }
+}
+
+@media (max-width: 1366px) {
+  .home-content {
+    min-width: 1024px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .home-content {
+    min-width: 960px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .home-content {
+    min-width: 0;
+  }
+}

@@ -55,13 +55,17 @@ function parseAttrJson(raw: unknown): Prisma.InputJsonValue | undefined {
   return raw as Prisma.InputJsonValue;
 }
 
-function normalizeTags(tagList?: string): string {
-  if (!tagList) return '';
-  return tagList
+function normalizeCommaList(raw?: string): string {
+  if (!raw) return '';
+  return raw
     .split(/[,，]/)
     .map((t) => t.trim())
     .filter(Boolean)
     .join(',');
+}
+
+function normalizeTags(tagList?: string): string {
+  return normalizeCommaList(tagList);
 }
 
 export async function buildSpuCreateData(
@@ -87,6 +91,7 @@ export async function buildSpuCreateData(
     specType,
     attrJson: parseAttrJson(dto.attrJson),
     tagList: normalizeTags(dto.tagList),
+    serviceList: normalizeCommaList(dto.serviceList),
     marketPrice: dto.marketPrice ?? minSkuPrice(dto.skus),
     costPrice: dto.costPrice ?? 0,
     vipPrice: dto.vipPrice ?? 0,
@@ -127,6 +132,7 @@ export function buildSpuUpdateData(
   if (dto.images != null) data.imagesJson = dto.images;
   if (dto.attrJson !== undefined) data.attrJson = parseAttrJson(dto.attrJson);
   if (dto.tagList != null) data.tagList = normalizeTags(dto.tagList);
+  if (dto.serviceList != null) data.serviceList = normalizeCommaList(dto.serviceList);
   if (dto.marketPrice != null) data.marketPrice = dto.marketPrice;
   if (dto.costPrice != null) data.costPrice = dto.costPrice;
   if (dto.vipPrice != null) data.vipPrice = dto.vipPrice;
@@ -170,6 +176,7 @@ export function formatSpuExtra(spu: {
   specType: number;
   attrJson: unknown;
   tagList: string;
+  serviceList: string;
   marketPrice: number;
   costPrice: number;
   vipPrice: number;
@@ -199,6 +206,7 @@ export function formatSpuExtra(spu: {
     specType: spu.specType,
     attrJson: spu.attrJson,
     tagList: spu.tagList ? spu.tagList.split(',').filter(Boolean) : [],
+    serviceList: spu.serviceList ? spu.serviceList.split(',').filter(Boolean) : [],
     marketPrice: spu.marketPrice,
     costPrice: spu.costPrice,
     vipPrice: spu.vipPrice,

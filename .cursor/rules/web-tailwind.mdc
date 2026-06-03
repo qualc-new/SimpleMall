@@ -1,0 +1,54 @@
+---
+description: Web 商城强制 Tailwind，非必要禁止新增 CSS 文件
+globs: "apps/web/**/*.{vue,ts,css,scss}"
+alwaysApply: false
+---
+
+# Web 样式：Tailwind 优先（强制）
+
+适用范围：`apps/web`（Nuxt 商城）。**所有新增与修改的 UI 样式**默认只用 Tailwind 工具类，写在模板 `class` 或 `@apply`（尽量少用）。
+
+## 必须
+
+1. **布局 / 间距 / 颜色 / 字号 / 圆角 / 阴影 / 显隐**：用 Tailwind 类（含项目 `bp-*` 断点，见 `web-responsive.mdc`）。
+2. **组件内样式**：优先 `<template>` 上的 `class="..."`，复杂组合可抽成 `computed` 类名字符串，勿新建 `.css`。
+3. **响应式**：仅用 `tailwind.config.ts` 中的 `bp-1440:` … `bp-375:`，禁止 `sm:`/`md:`/`lg:` 等默认前缀。
+
+## 禁止（非必要不要做）
+
+- **禁止**为页面/组件新增独立 `.css` / `.scss` 文件（含 `assets/css/xxx.css`）。
+- **禁止**在 `.vue` 中写大段 `<style>` / `<style scoped>` 自定义规则；仅当 Tailwind 无法表达时再写少量 CSS。
+- **禁止**用 CSS 文件实现本可用 Tailwind 完成的样式（flex/grid、padding、colors、sticky 等）。
+
+## 允许例外（须注释说明原因）
+
+| 场景 | 做法 |
+|------|------|
+| 已有全局样式（`layout.css`、`header.css` 等） | 可维护，**不要**随意扩大；新需求优先改 Tailwind |
+| 第三方/富文本（`prose`、`v-html` 内 `:deep(img)`） | 允许少量 scoped CSS 或 `@layer components` |
+| 动画/伪元素 Tailwind 无法简洁表达 | 最小化 CSS，并注明为何不用 Tailwind |
+| `breakpoints.css` 等 Tailwind 插件前置 | 仅配置层，不写业务样式 |
+
+新增例外时在代码旁用一行注释说明，例如：`/* Tailwind 无法实现 xxx */`。
+
+## 示例
+
+```vue
+<!-- ✅ GOOD -->
+<div class="grid grid-cols-[1fr_26rem] gap-5 bp-1024:grid-cols-1">
+  <aside class="sticky top-[5.5rem] max-h-[calc(100vh-6.5rem)] overflow-y-auto rounded-xl bg-white p-5 shadow">
+```
+
+```vue
+<!-- ❌ BAD：新建 product-detail.css 写布局 -->
+<style scoped>
+.product-detail__layout { display: grid; ... }
+</style>
+```
+
+## 自检
+
+- [ ] 未新增 CSS 文件（除非符合上表例外且已注释）
+- [ ] Vue 中无大块 `<style>`，样式主要在 `class`
+- [ ] 断点使用 `bp-*`，未用默认 Tailwind 断点前缀
+- [ ] 与 `web-responsive.mdc` 一致（禁止 `min()`/`max()`/`clamp()` 函数）

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { SpuStatus, syncSpuStatusByStock, totalAvailableStock } from '@simplemall/shared';
+import { SpuStatus, TagStatus, syncSpuStatusByStock, totalAvailableStock } from '@simplemall/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { syncSpuStatusAfterStockChange } from './spu-status.helper';
 import { BizError } from '../../common/exceptions/business.exception';
+import { assertSpuServiceListEnabled } from './service-list.helper';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/admin-category.dto';
 import { AdminCreateSpuDto, AdminUpdateSpuDto } from './dto/admin-spu.dto';
 import {
@@ -108,42 +109,155 @@ export class AdminCatalogService {
     return { ok: true };
   }
 
-  /** 标签检索（词库 + 已用于商品的 tag_list） */
-  async searchTags(keyword?: string, limit = 20) {
-    const q = keyword?.trim();
-    const fromDb = await this.prisma.tag.findMany({
-      where: q ? { name: { contains: q } } : undefined,
-      take: limit,
-      orderBy: { name: 'asc' },
+  listTagsAdmin() {
+    return this.prisma.tag.findMany({
+      orderBy: [{ isHot: 'desc' }, { id: 'asc' }],
     });
-    const names = new Set(fromDb.map((t) => t.name));
-    if (q && names.size < limit) {
-      const spus = await this.prisma.spu.findMany({
-        where: { tagList: { contains: q } },
-        select: { tagList: true },
-        take: 50,
-      });
-      for (const s of spus) {
-        s.tagList.split(/[,，]/).forEach((t) => {
-          const n = t.trim();
-          if (n && (!q || n.includes(q))) names.add(n);
-        });
-      }
-    }
-    return [...names].slice(0, limit).map((name) => ({ name }));
   }
 
-  async ensureTag(name: string) {
-    const n = name.trim();
-    if (!n) throw BizError.notFound('标签名不能为空');
-    return this.prisma.tag.upsert({
-      where: { name: n },
-      update: {},
-      create: { name: n },
+  /** 商品表单：仅返回启用中的标签 */
+  searchTagsForSpu(keyword?: string, limit = 30) {
+    const q = keyword?.trim();
+    return this.prisma.tag.findMany({
+      where: {
+        status: TagStatus.ENABLED,
+        ...(q ? { name: { contains: q } } : {}),
+      },
+      take: limit,
+      orderBy: [{ isHot: 'desc' }, { name: 'asc' }],
     });
+  }
+
+  createTag(data: { name: string; status?: TagStatus; isHot?: boolean }) {
+    const name = data.name.trim();
+    if (!name) throw BizError.notFound('标签名不能为空');
+    return this.prisma.tag.create({
+      data: {
+        name,
+        status: data.status ?? TagStatus.ENABLED,
+        isHot: data.isHot ?? false,
+      },
+    });
+  }
+
+  async updateTag(id: number, data: { name?: string; status?: TagStatus; isHot?: boolean }) {
+    const row = await this.prisma.tag.findUnique({ where: { id } });
+    if (!row) throw BizError.notFound();
+    if (data.name && data.name !== row.name) {
+      const dup = await this.prisma.tag.findFirst({ where: { name: data.name, id: { not: id } } });
+      if (dup) throw BizError.notFound('标签名称已存在');
+    }
+    return this.prisma.tag.update({ where: { id }, data });
+  }
+
+  listServiceGuaranteesAdmin() {
+    return this.prisma.serviceGuarantee.findMany({
+      orderBy: [{ sort: 'desc' }, { id: 'asc' }],
+    });
+  }
+
+  searchServiceGuaranteesForSpu(keyword?: string, limit = 30) {
+    const q = keyword?.trim();
+    return this.prisma.serviceGuarantee.findMany({
+      where: {
+        status: TagStatus.ENABLED,
+        ...(q ? { name: { contains: q } } : {}),
+      },
+      take: limit,
+      orderBy: [{ sort: 'desc' }, { name: 'asc' }],
+    });
+  }
+
+  createServiceGuarantee(data: { name: string; status?: TagStatus; sort?: number }) {
+    const name = data.name.trim();
+    if (!name) throw BizError.notFound('名称不能为空');
+    return this.prisma.serviceGuarantee.create({
+      data: {
+        name,
+        status: data.status ?? TagStatus.ENABLED,
+        sort: data.sort ?? 0,
+      },
+    });
+  }
+
+  async updateServiceGuarantee(
+    id: number,
+    data: { name?: string; status?: TagStatus; sort?: number },
+  ) {
+    const row = await this.prisma.serviceGuarantee.findUnique({ where: { id } });
+    if (!row) throw BizError.notFound();
+    if (data.name && data.name !== row.name) {
+      const dup = await this.prisma.serviceGuarantee.findFirst({
+        where: { name: data.name, id: { not: id } },
+      });
+      if (dup) throw BizError.notFound('名称已存在');
+    }
+    return this.prisma.serviceGuarantee.update({ where: { id }, data });
+  }
+
+  async deleteServiceGuarantee(id: number) {
+    const row = await this.prisma.serviceGuarantee.findUnique({ where: { id } });
+    if (!row) throw BizError.notFound();
+    const used = await this.prisma.spu.count({
+      where: {
+        OR: [
+          { serviceList: row.name },
+          { serviceList: { startsWith: `${row.name},` } },
+          { serviceList: { endsWith: `,${row.name}` } },
+          { serviceList: { contains: `,${row.name},` } },
+        ],
+      },
+    });
+    if (used > 0) throw BizError.notFound('已被商品使用，无法删除');
+    await this.prisma.serviceGuarantee.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  async assertSpuServicesEnabled(serviceList?: string) {
+    try {
+      await assertSpuServiceListEnabled(this.prisma, serviceList);
+    } catch (e) {
+      throw BizError.notFound(e instanceof Error ? e.message : '服务保障校验失败');
+    }
+  }
+
+  async deleteTag(id: number) {
+    const row = await this.prisma.tag.findUnique({ where: { id } });
+    if (!row) throw BizError.notFound();
+    const used = await this.prisma.spu.count({
+      where: {
+        OR: [
+          { tagList: row.name },
+          { tagList: { startsWith: `${row.name},` } },
+          { tagList: { endsWith: `,${row.name}` } },
+          { tagList: { contains: `,${row.name},` } },
+        ],
+      },
+    });
+    if (used > 0) throw BizError.notFound('标签已被商品使用，无法删除');
+    await this.prisma.tag.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  /** 保存商品时校验 tag_list 均为启用标签 */
+  async assertSpuTagsEnabled(tagList?: string) {
+    if (!tagList?.trim()) return;
+    const names = tagList
+      .split(/[,，]/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (!names.length) return;
+    const rows = await this.prisma.tag.findMany({
+      where: { name: { in: names }, status: TagStatus.ENABLED },
+    });
+    const ok = new Set(rows.map((t) => t.name));
+    const bad = names.filter((n) => !ok.has(n));
+    if (bad.length) throw BizError.notFound(`请先在标签管理启用或创建：${bad.join('、')}`);
   }
 
   async createSpu(dto: AdminCreateSpuDto) {
+    await this.assertSpuTagsEnabled(dto.tagList);
+    await this.assertSpuServicesEnabled(dto.serviceList);
     const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
     if (!cat) throw BizError.notFound('类目不存在');
     if (!dto.skus?.length) throw BizError.notFound('至少一个 SKU');
@@ -171,6 +285,8 @@ export class AdminCatalogService {
   }
 
   async updateSpu(id: number, dto: AdminUpdateSpuDto) {
+    if (dto.tagList != null) await this.assertSpuTagsEnabled(dto.tagList);
+    if (dto.serviceList != null) await this.assertSpuServicesEnabled(dto.serviceList);
     const spu = await this.prisma.spu.findUnique({ where: { id }, include: { skus: true } });
     if (!spu) throw BizError.notFound();
     if (dto.brandId) {

@@ -4,27 +4,27 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { http } from '../services/http';
 
-export interface TagOption {
+export interface ServiceGuaranteeOption {
   id: number;
   name: string;
   status: string;
-  isHot: boolean;
+  sort: number;
 }
 
 interface Props {
   value?: string[];
-  onChange?: (tags: string[]) => void;
+  onChange?: (names: string[]) => void;
 }
 
-/** 商品标签：从标签管理中选择（仅启用状态） */
-export default function TagInput({ value = [], onChange }: Props) {
-  const [options, setOptions] = useState<TagOption[]>([]);
+/** 商品服务保障：从服务保障管理中选择（仅启用） */
+export default function ServiceGuaranteeInput({ value = [], onChange }: Props) {
+  const [options, setOptions] = useState<ServiceGuaranteeOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async (q?: string) => {
     setLoading(true);
     try {
-      const { data } = await http.get<TagOption[]>('/admin/tags', {
+      const { data } = await http.get<ServiceGuaranteeOption[]>('/admin/service-guarantees', {
         params: { for: 'spu', q: q || undefined },
       });
       setOptions(data);
@@ -39,12 +39,7 @@ export default function TagInput({ value = [], onChange }: Props) {
 
   const selectOptions = options.map((t) => ({
     value: t.name,
-    label: (
-      <Space size={4}>
-        {t.name}
-        {t.isHot ? <span style={{ color: '#ff4d4f', fontSize: 12 }}>热</span> : null}
-      </Space>
-    ),
+    label: t.name,
   }));
 
   return (
@@ -52,7 +47,7 @@ export default function TagInput({ value = [], onChange }: Props) {
       <Select
         mode="multiple"
         style={{ width: '100%' }}
-        placeholder="选择标签（需在标签管理中启用）"
+        placeholder="选择服务保障（需在服务保障管理中启用）"
         value={value}
         onChange={(v) => onChange?.(v)}
         options={selectOptions}
@@ -63,8 +58,8 @@ export default function TagInput({ value = [], onChange }: Props) {
         onFocus={() => load()}
       />
       <Space size="small" style={{ marginTop: 8 }}>
-        <Link to="/tags" target="_blank">
-          管理标签
+        <Link to="/service-guarantees" target="_blank">
+          管理服务保障
         </Link>
         <Button type="link" size="small" icon={<ReloadOutlined />} onClick={() => load()}>
           刷新
