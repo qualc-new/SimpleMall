@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { OrderTimeoutJob } from './order-timeout.job';
 import { OrderAutoCompleteJob } from './order-auto-complete.job';
-import { InventoryModule } from '../modules/inventory/inventory.module';
-import { OrderModule } from '../modules/order/order.module';
+import { InventoryCoreModule } from '../modules/core/inventory/inventory-core.module';
+import { OrderCoreModule } from '../modules/core/order/order-core.module';
 
 @Module({
-  imports: [InventoryModule, OrderModule],
+  imports: [InventoryCoreModule, OrderCoreModule],
   providers: [OrderTimeoutJob, OrderAutoCompleteJob],
 })
 export class JobsModule {}

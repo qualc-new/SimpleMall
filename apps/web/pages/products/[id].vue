@@ -51,7 +51,22 @@
             <div class="text-sm text-gray-700 leading-relaxed">
               <p>{{ expressSummary }}</p>
               <p class="mt-1.5 text-emerald-600">
-                {{ spu.shipFrom || '上海' }} 至 {{ destLabel }}
+                <button
+                  v-if="!auth.accessToken"
+                  type="button"
+                  class="text-emerald-600 underline underline-offset-2 decoration-dotted cursor-pointer bg-transparent border-0 p-0 inline align-baseline"
+                  @click="requireLogin()"
+                >
+                  登录后查看送达地址
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="text-emerald-600 underline underline-offset-2 cursor-pointer bg-transparent border-0 p-0 inline align-baseline text-left"
+                  @click="goPickAddress"
+                >
+                  当前地址 至 {{ destLabel || '请选择收货地址' }}
+                </button>
               </p>
             </div>
           </div>
@@ -184,6 +199,7 @@
 
 <script setup lang="ts">
 import { normalizeSpuStatus, SPU_PURCHASABLE } from '@simplemall/shared';
+import { loadPickedAddress } from '../../composables/useAddressPick';
 
 const route = useRoute();
 const { format } = usePrice();
@@ -191,6 +207,7 @@ const { label: statusLabel, badgeClass, canPurchase, purchaseHint } = useSpuStat
 const api = useApi();
 const cart = useCartStore();
 const auth = useAuthStore();
+const { requireLogin } = useRequireLogin();
 if (import.meta.client) auth.hydrate();
 
 interface Sku {
@@ -244,6 +261,7 @@ const quantity = ref(1);
 const isFavorited = ref(false);
 
 function toggleFavorite() {
+  if (!requireLogin()) return;
   isFavorited.value = !isFavorited.value;
 }
 
@@ -311,14 +329,9 @@ const expressSummary = computed(() => {
 });
 
 const destLabel = computed(() => {
-  if (defaultAddress.value) {
-    const a = defaultAddress.value;
-    return `${a.province} ${a.city} ${a.district}`;
-  }
-  if (auth.accessToken) {
-    return '请添加收货地址';
-  }
-  return '登录后查看送达地址';
+  if (!defaultAddress.value) return '';
+  const a = defaultAddress.value;
+  return `${a.province} ${a.city} ${a.district}`;
 });
 
 /** 商品是否仍存在可售 SKU（已上架且有库存） */
@@ -379,6 +392,15 @@ function clampQty() {
   if (quantity.value > maxQty.value) quantity.value = maxQty.value;
 }
 
+function applyPickedOrDefault() {
+  const picked = loadPickedAddress();
+  if (picked) {
+    defaultAddress.value = picked;
+    return;
+  }
+  loadDefaultAddress();
+}
+
 async function loadDefaultAddress() {
   if (!auth.accessToken) {
     defaultAddress.value = null;
@@ -392,32 +414,38 @@ async function loadDefaultAddress() {
   }
 }
 
+function goPickAddress() {
+  if (!requireLogin()) return;
+  navigateTo({
+    path: '/user/addresses',
+    query: { pick: '1', from: route.fullPath },
+  });
+}
+
 onMounted(() => {
-  loadDefaultAddress();
+  applyPickedOrDefault();
+});
+
+onActivated(() => {
+  applyPickedOrDefault();
 });
 
 watch(
   () => auth.accessToken,
-  () => loadDefaultAddress(),
+  () => applyPickedOrDefault(),
 );
 
 async function addCart() {
-  if (!currentSku.value) return;
-  if (!auth.accessToken) {
-    navigateTo('/login?redirect=' + encodeURIComponent(route.fullPath));
-    return;
-  }
+  if (!currentSku.value || !canBuy.value) return;
+  if (!requireLogin()) return;
   clampQty();
   await cart.add(currentSku.value.id, quantity.value);
   alert('已加入购物车');
 }
 
 function buyNow() {
-  if (!currentSku.value) return;
-  if (!auth.accessToken) {
-    navigateTo('/login?redirect=' + encodeURIComponent(route.fullPath));
-    return;
-  }
+  if (!currentSku.value || !canBuy.value) return;
+  if (!requireLogin()) return;
   clampQty();
   navigateTo(`/checkout?skuId=${currentSku.value.id}&qty=${quantity.value}&buyNow=1`);
 }

@@ -1,7 +1,13 @@
 node_modules
 .dev
 dist
+apps/api/.cache
+apps/api/tsconfig.tsbuildinfo
+apps/api/tsconfig.build.tsbuildinfo
 packages/shared/dist
+packages/shared/src/**/*.js
+packages/shared/src/**/*.d.ts
+packages/shared/src/**/*.js.map
 .output
 .nuxt
 .env

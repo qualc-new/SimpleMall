@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { OrderStatus } from '@simplemall/shared';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { InventoryService } from '../modules/inventory/inventory.service';
+import { InventoryService } from '../modules/core/inventory/inventory.service';
 
 @Injectable()
 export class OrderTimeoutJob {

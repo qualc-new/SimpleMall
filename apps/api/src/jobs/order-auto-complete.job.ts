@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { OrderStatus } from '@simplemall/shared';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { OrderService } from '../modules/order/order.service';
+import { OrderService } from '../modules/core/order/order.service';
 
 @Injectable()
 export class OrderAutoCompleteJob {

@@ -7,6 +7,7 @@ export const MENU_PATHS = [
   { key: '/express-templates', prefix: true },
   { key: '/products', prefix: true },
   { key: '/orders', prefix: true },
+  { key: '/users', prefix: true },
   { key: '/dev/mock-pay', prefix: true },
 ] as const;
 
@@ -27,6 +28,7 @@ export const BREADCRUMB_LABELS: Record<string, string> = {
   '/express-templates': '运费模板',
   '/products': '商品列表',
   '/orders': '订单列表',
+  '/users': '商城用户',
   '/dev/mock-pay': '模拟支付',
 };
 

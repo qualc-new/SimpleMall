@@ -8,8 +8,7 @@
     "dev:api": "pnpm --filter @simplemall/api dev",
     "dev:web": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm --filter @simplemall/web dev",
     "dev:admin": "pnpm --filter @simplemall/admin dev",
-    "build": "pnpm --filter @simplemall/shared build && pnpm run -r build",
-    "build:shared": "pnpm --filter @simplemall/shared build",
+    "build": "pnpm -r build",
     "db:up": "docker compose up -d",
     "db:migrate": "pnpm --filter @simplemall/api prisma:migrate",
     "db:seed": "pnpm --filter @simplemall/api prisma:seed"

@@ -21,7 +21,7 @@ export default function OrderListPage() {
   const [list, setList] = useState<OrderRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<string | undefined>('PAID');
+  const [status, setStatus] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [shipModal, setShipModal] = useState<number | null>(null);
   const [form] = Form.useForm();

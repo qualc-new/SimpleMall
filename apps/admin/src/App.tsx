@@ -10,6 +10,7 @@ import BrandListPage from './pages/Brand/List';
 import ExpressListPage from './pages/Express/List';
 import TagListPage from './pages/Tag/List';
 import ServiceGuaranteeListPage from './pages/ServiceGuarantee/List';
+import UserListPage from './pages/User/List';
 import OrderDetailPage from './pages/Order/Detail';
 import MockPayPage from './pages/DevTools/MockPay';
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="express-templates" element={<ExpressListPage />} />
           <Route path="tags" element={<TagListPage />} />
           <Route path="service-guarantees" element={<ServiceGuaranteeListPage />} />
+          <Route path="users" element={<UserListPage />} />
           <Route path="dev/mock-pay" element={<MockPayPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

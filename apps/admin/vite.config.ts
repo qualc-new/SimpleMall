@@ -2,22 +2,18 @@ import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const sharedRoot = path.resolve(__dirname, '../../packages/shared');
+const sharedSrc = path.resolve(__dirname, '../../packages/shared/src/index.ts');
 
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   plugins: [react()],
-  // 不预构建 workspace 包，避免缓存旧版 dist 导致缺少 SPU_STATUS_LABEL 等导出
+  // 由 Vite 直接编译 workspace 源码，无需预构建 dist
   optimizeDeps: {
     exclude: ['@simplemall/shared'],
   },
   resolve: {
     alias: {
-      '@simplemall/shared': path.join(
-        sharedRoot,
-        command === 'serve' ? 'src/index.ts' : 'dist/esm/index.js',
-      ),
+      '@simplemall/shared': sharedSrc,
     },
-    conditions: ['development', 'import', 'module', 'browser', 'default'],
   },
   server: {
     port: 5173,
@@ -28,4 +24,4 @@ export default defineConfig(({ command }) => ({
       },
     },
   },
-}));
+});

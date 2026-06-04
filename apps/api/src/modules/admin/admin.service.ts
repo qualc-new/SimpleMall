@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '@simplemall/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BizError } from '../../common/exceptions/business.exception';
-import { OrderService } from '../order/order.service';
+import { OrderService } from '../core/order/order.service';
 
 @Injectable()
 export class AdminService {

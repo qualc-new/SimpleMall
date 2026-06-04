@@ -14,13 +14,9 @@ export default defineNuxtConfig({
   vite: {
     resolve: {
       alias: {
+        // 开发与生产均由 Vite/Nuxt 编译源码，避免 CJS dist 与 Rollup 命名导出不兼容
         '@simplemall/shared': fileURLToPath(
-          new URL(
-            process.env.NODE_ENV === 'production'
-              ? '../../packages/shared/dist/esm/index.js'
-              : '../../packages/shared/src/index.ts',
-            import.meta.url,
-          ),
+          new URL('../../packages/shared/src/index.ts', import.meta.url),
         ),
       },
     },

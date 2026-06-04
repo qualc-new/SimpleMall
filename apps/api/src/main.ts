@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
@@ -12,7 +12,11 @@ async function bootstrap() {
   const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:3000').split(',');
 
   app.enableCors({ origin: corsOrigins, credentials: true });
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api');
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
   );
@@ -21,7 +25,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
-  console.log(`API http://localhost:${port}/api/v1/health`);
+  console.log(`API http://localhost:${port}/api/v1/health (v2: /api/v2/admin/users)`);
 }
 
 bootstrap();

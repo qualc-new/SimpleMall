@@ -32,13 +32,17 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('sm_user', JSON.stringify(this.user));
       }
     },
-    logout() {
+    clearSession() {
       this.accessToken = '';
       this.user = null;
       if (import.meta.client) {
         localStorage.removeItem('sm_access_token');
         localStorage.removeItem('sm_user');
       }
+    },
+    logout() {
+      this.clearSession();
+      useLoginModalStore().close();
       navigateTo('/');
     },
   },

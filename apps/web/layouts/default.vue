@@ -65,6 +65,7 @@
       <slot />
     </main>
     <AppFooter />
+    <LoginModal />
   </div>
 </template>
 
@@ -91,6 +92,10 @@ const cartBadge = computed(() => {
 
 onMounted(() => {
   auth.hydrate();
-  if (auth.accessToken) cart.fetchCart();
+  if (auth.accessToken) {
+    cart.fetchCart();
+  } else {
+    cart.items = [];
+  }
 });
 </script>

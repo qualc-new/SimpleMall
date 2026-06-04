@@ -4,10 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "pnpm --filter @simplemall/shared build",
     "dev": "vite --port 5173",
     "dev:clean": "rm -rf node_modules/.vite && vite --port 5173",
-    "build": "pnpm --filter @simplemall/shared build && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {

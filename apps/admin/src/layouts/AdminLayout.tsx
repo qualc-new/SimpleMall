@@ -29,6 +29,7 @@ const menuItems: MenuProps['items'] = [
   { key: '/express-templates', icon: <AppstoreOutlined />, label: <Link to="/express-templates">运费模板</Link> },
   { key: '/products', icon: <ShoppingOutlined />, label: <Link to="/products">商品列表</Link> },
   { key: '/orders', icon: <ShoppingCartOutlined />, label: <Link to="/orders">订单列表</Link> },
+  { key: '/users', icon: <UserOutlined />, label: <Link to="/users">商城用户</Link> },
   {
     key: '/dev/mock-pay',
     icon: <ExperimentOutlined />,
