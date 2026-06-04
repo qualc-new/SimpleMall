@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react';
 const sharedSrc = path.resolve(__dirname, '../../packages/shared/src/index.ts');
 
 export default defineConfig({
+  // TCB 静态托管子路径 /admin 时：VITE_BASE=/admin/
+  base: process.env.VITE_BASE || '/',
   plugins: [react()],
   // 由 Vite 直接编译 workspace 源码，无需预构建 dist
   optimizeDeps: {

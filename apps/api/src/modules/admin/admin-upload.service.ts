@@ -19,6 +19,8 @@ export class AdminUploadService {
     await mkdir(this.uploadDir, { recursive: true });
     const filename = `${randomUUID()}${ext}`;
     await writeFile(join(this.uploadDir, filename), file.buffer);
-    return { url: `/api/v1/uploads/${filename}`, filename };
+    const base = (process.env.PUBLIC_API_BASE ?? '').replace(/\/$/, '');
+    const path = `/api/v1/uploads/${filename}`;
+    return { url: base ? `${base}${path}` : path, filename };
   }
 }

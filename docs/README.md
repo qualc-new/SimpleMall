@@ -25,7 +25,8 @@ docs/
 ├── 共享接口与约定.md                   ← 三端共同契约（必读）
 ├── 服务端开发设计文档.md               ← apps/api
 ├── Web商城开发设计文档.md              ← apps/web (Nuxt)
-└── 管理后台开发设计文档.md             ← apps/admin (React)
+├── 管理后台开发设计文档.md             ← apps/admin (React)
+└── TCB部署说明.md                      ← 腾讯云开发（Prisma + 云托管）
 ```
 
 ### 阅读顺序（新成员）

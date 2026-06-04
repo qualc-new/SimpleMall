@@ -23,9 +23,10 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const port = process.env.PORT ?? 4000;
-  await app.listen(port);
-  console.log(`API http://localhost:${port}/api/v1/health (v2: /api/v2/admin/users)`);
+  const port = Number(process.env.PORT) || 4000;
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(port, host);
+  console.log(`API http://${host}:${port}/api/v1/health (v2: /api/v2/admin/users)`);
 }
 
 bootstrap();

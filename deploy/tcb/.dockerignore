@@ -1,0 +1,17 @@
+.git
+.cursor
+.agents
+.dev
+node_modules
+**/node_modules
+**/dist
+**/.nuxt
+**/.output
+apps/web
+apps/admin
+docs
+*.md
+**/.env
+**/.env.*
+apps/api/.env
+apps/api/uploads

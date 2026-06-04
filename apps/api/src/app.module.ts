@@ -9,16 +9,18 @@ import { WebModule } from './modules/web/web.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { JobsModule } from './jobs/jobs.module';
 
+/** 云托管多副本时可设 ENABLE_CRON=false，避免定时任务重复执行 */
+const cronEnabled = process.env.ENABLE_CRON !== 'false';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ScheduleModule.forRoot(),
+    ...(cronEnabled ? [ScheduleModule.forRoot(), JobsModule] : []),
     PrismaModule,
     RedisModule,
     AuthCoreModule,
     WebModule,
     AdminModule,
-    JobsModule,
   ],
   controllers: [AppController],
 })

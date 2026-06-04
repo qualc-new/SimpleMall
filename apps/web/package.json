@@ -8,6 +8,7 @@
     "dev:clean": "rm -rf .nuxt .output node_modules/.cache node_modules/.vite && bash scripts/dev.sh",
     "prepare:nuxt": "bash scripts/prepare.sh",
     "build": "nuxt build",
+    "generate": "nuxt generate",
     "preview": "nuxt preview"
   },
   "dependencies": {

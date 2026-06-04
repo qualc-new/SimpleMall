@@ -1,0 +1,18 @@
+# TCB API 镜像构建（与 deploy/tcb/.dockerignore 同步）
+.git
+.cursor
+.agents
+.dev
+node_modules
+**/node_modules
+**/dist
+**/.nuxt
+**/.output
+apps/web
+apps/admin
+docs
+*.md
+**/.env
+**/.env.*
+apps/api/.env
+apps/api/uploads
