@@ -1,6 +1,6 @@
 import { DeleteOutlined } from '@ant-design/icons';
 import { App, Button, Input, InputNumber, Popconfirm, Space, Table } from 'antd';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 export interface SkuRow {
   key: string;
@@ -33,6 +33,28 @@ export default function SpecMatrixEditor({
 }: Props) {
   const { message } = App.useApp();
   const [newDim, setNewDim] = useState('');
+  // 各维度输入框的本地态，避免逗号分隔被 onChange 吞字
+  const dimInputRefs = useRef<Record<string, string>>({});
+  const [, forceUpdate] = useState(0);
+
+  const getDimInput = (name: string): string => {
+    if (name in dimInputRefs.current) return dimInputRefs.current[name];
+    return (specValues[name] || []).join(',');
+  };
+
+  const setDimInput = (name: string, val: string) => {
+    dimInputRefs.current[name] = val;
+    forceUpdate((n) => n + 1);
+  };
+
+  const commitDimInput = (name: string) => {
+    const raw = dimInputRefs.current[name];
+    if (raw === undefined) return;
+    const arr = raw.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+    onSpecValuesChange({ ...specValues, [name]: arr });
+    delete dimInputRefs.current[name];
+    forceUpdate((n) => n + 1);
+  };
 
   const generate = () => {
     const dims = specNames.filter((n) => (specValues[n] || []).length > 0);
@@ -123,16 +145,9 @@ export default function SpecMatrixEditor({
             <Input
               placeholder="多个值用逗号分隔"
               style={{ width: 320 }}
-              value={(specValues[n] || []).join(',')}
-              onChange={(e) =>
-                onSpecValuesChange({
-                  ...specValues,
-                  [n]: e.target.value
-                    .split(/[,，]/)
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                })
-              }
+              value={getDimInput(n)}
+              onChange={(e) => setDimInput(n, e.target.value)}
+              onBlur={() => commitDimInput(n)}
             />
             <Popconfirm
               title={`删除规格维度「${n}」？`}

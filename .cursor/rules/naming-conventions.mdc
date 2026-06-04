@@ -25,8 +25,9 @@ alwaysApply: false
 
 ## Web 商城（Nuxt，`apps/web`）
 
-- 路由：`pages/` 文件路由；组合式函数：`composables/useXxx.ts`。
-- 调用 API：`useApi()`；金额展示：`usePrice()`。
+- 路由：`pages/` 文件路由；组合式函数：`composables/useXxx.ts` 或 `composables/<模块>/index.ts`（见 `web-feature-modules.mdc`）。
+- 调用 API：`useApi()`；金额展示：`usePrice()`；Toast：`useToast()`（`composables/toast/`）。
+- 客户端 createApp 浮层：`composables/client-mount.ts` + `plugins/client-mount.client.ts`。
 
 ## 通用
 

@@ -2,6 +2,7 @@ import {
   AppstoreOutlined,
   DashboardOutlined,
   ExperimentOutlined,
+  GithubOutlined,
   LogoutOutlined,
   ShoppingCartOutlined,
   ShoppingOutlined,
@@ -51,6 +52,16 @@ export default function AdminLayout() {
   };
 
   const userMenu: MenuProps['items'] = [
+    {
+      key: 'github',
+      icon: <GithubOutlined />,
+      label: (
+        <a href="https://github.com/qualc-new/SimpleMall" target="_blank" rel="noopener noreferrer">
+          GitHub
+        </a>
+      ),
+    },
+    { type: 'divider' },
     {
       key: 'logout',
       icon: <LogoutOutlined />,

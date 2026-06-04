@@ -1,6 +1,9 @@
 import { fileURLToPath } from 'node:url';
 
 export default defineNuxtConfig({
+  imports: {
+    dirs: ['composables', 'composables/**'],
+  },
   // 开发态关闭 DevTools，减少 vite-node 子进程与 IPC socket 异常（ENOENT）
   devtools: { enabled: process.env.NUXT_DEVTOOLS === 'true' },
   // 避免 macOS 上 dev 被强杀后 nuxt-vite-node-*.sock 连接失败（Nuxt 3.16+）

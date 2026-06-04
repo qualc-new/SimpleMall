@@ -45,7 +45,14 @@ onMounted(async () => {
   address.value = addrs.find((a) => a?.isDefault) ?? addrs[0] ?? null;
 
   if (route.query.buyNow && route.query.skuId) {
-    lines.value = [];
+    const title = typeof route.query.title === 'string' ? route.query.title : '';
+    const price = Number(route.query.price) || 0;
+    const qty = Number(route.query.qty) || 1;
+    lines.value = [{
+      id: 0,
+      quantity: qty,
+      sku: { spuTitle: title, price },
+    }];
     return;
   }
 

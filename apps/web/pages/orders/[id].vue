@@ -1,23 +1,128 @@
 <template>
-  <div v-if="order" class="bg-white p-6 rounded-xl shadow space-y-4">
-    <h1 class="text-xl font-semibold">订单 {{ order.orderNo }}</h1>
-    <p>状态：<span class="font-medium">{{ statusLabel(order.status) }}</span></p>
-    <p class="text-emerald-700 text-lg">{{ format(order.payAmount) }}</p>
-    <div v-if="logistics" class="text-sm bg-gray-50 p-3 rounded">
-      <p>物流：{{ logistics.company }}</p>
-      <p>单号：{{ logistics.trackingNo }}</p>
+  <div v-if="order" class="space-y-5">
+    <!-- 订单头 -->
+    <div class="bg-white p-6 rounded-xl shadow space-y-3">
+      <div class="flex justify-between items-start flex-wrap gap-2">
+        <h1 class="text-xl font-semibold">订单 {{ order.orderNo }}</h1>
+        <span class="text-sm px-3 py-1 rounded-full font-medium bg-emerald-50 text-emerald-700">
+          {{ statusLabel(order.status) }}
+        </span>
+      </div>
+      <!-- 金额汇总 -->
+      <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-gray-500">
+        <span>商品总额 <b class="text-gray-900">{{ format(order.totalAmount) }}</b></span>
+        <span>运费 <b class="text-gray-900">{{ freightText }}</b></span>
+        <span class="text-base">
+          实付 <b class="text-emerald-700 text-xl">{{ format(order.payAmount) }}</b>
+        </span>
+      </div>
     </div>
-    <ul class="space-y-2">
-      <li v-for="item in order.items" :key="item.id" class="text-sm border-t pt-2">
-        {{ item.spuTitle }} × {{ item.quantity }} — {{ format(item.unitPrice * item.quantity) }}
-      </li>
-    </ul>
-    <div v-if="order.statusLogs?.length" class="text-xs text-gray-500 space-y-1">
-      <p v-for="log in order.statusLogs" :key="log.id">
-        {{ formatLogTime(log.createdAt) }} → {{ statusLabel(log.toStatus) }}
-        <span v-if="log.remark" class="text-gray-600">（{{ log.remark }}）</span>
-      </p>
+
+    <!-- 物流信息 -->
+    <div v-if="logistics" class="bg-white p-4 rounded-xl shadow text-sm space-y-1">
+      <p><span class="text-gray-400">物流公司</span> {{ logistics.company }}</p>
+      <p><span class="text-gray-400">快递单号</span> {{ logistics.trackingNo }}</p>
     </div>
+
+    <!-- 商品列表 -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-base font-semibold text-gray-900 mb-4">商品信息</h2>
+      <ul class="divide-y divide-gray-100">
+        <li v-for="(item, idx) in order.items" :key="item.id" class="py-4 first:pt-0 last:pb-0">
+          <div class="flex gap-4">
+            <!-- 商品图片（可点击预览） -->
+            <div class="relative shrink-0">
+              <img
+                :src="item.spuImage"
+                class="w-24 h-24 object-cover rounded-lg cursor-pointer border border-gray-100"
+                alt=""
+                @click="openGallery(idx)"
+              />
+              <button
+                v-if="(item.spuImages?.length ?? 0) > 0"
+                class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded"
+                @click.stop="openGallery(idx)"
+              >
+                {{ (item.spuImages?.length ?? 0) + 1 }}图
+              </button>
+            </div>
+            <!-- 商品信息 -->
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-900 line-clamp-2">{{ item.spuTitle }}</p>
+              <!-- 规格 -->
+              <p class="text-xs text-gray-500 mt-1">{{ specText(item.specsJson) }}</p>
+              <!-- 服务保障标签 -->
+              <div v-if="parseServiceList(item.spuServiceList).length" class="flex flex-wrap gap-1 mt-2">
+                <span
+                  v-for="s in parseServiceList(item.spuServiceList)"
+                  :key="s"
+                  class="text-[10px] text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded"
+                >{{ s }}</span>
+              </div>
+            </div>
+            <!-- 价格与数量 -->
+            <div class="shrink-0 text-right">
+              <p class="text-base font-semibold text-gray-900">{{ format(item.unitPrice) }}</p>
+              <p v-if="showMarketPrice(item)" class="text-xs text-gray-400 line-through">{{ format(item.spuMarketPrice) }}</p>
+              <p class="text-sm text-gray-400 mt-1">× {{ item.quantity }}</p>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <!-- 运费 + 优惠合计 -->
+      <div class="mt-4 pt-4 border-t border-gray-100 space-y-1.5 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">商品小计</span>
+          <span class="text-gray-900">{{ format(itemsTotal) }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">运费</span>
+          <span class="text-gray-900">{{ freightText }}</span>
+        </div>
+        <div v-if="discountAmount > 0" class="flex justify-between">
+          <span class="text-gray-500">优惠</span>
+          <span class="text-emerald-600">-{{ format(discountAmount) }}</span>
+        </div>
+        <div class="flex justify-between pt-1.5 border-t border-gray-100 text-base font-semibold">
+          <span>实付</span>
+          <span class="text-emerald-700">{{ format(order.payAmount) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 订单轨迹 -->
+    <div v-if="order.statusLogs?.length" class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-base font-semibold text-gray-900 mb-4">订单轨迹</h2>
+      <div class="relative pl-8">
+        <div
+          class="absolute left-[6.5px] top-1.5 bottom-0 w-px bg-gray-200"
+          aria-hidden="true"
+        />
+        <div
+          v-for="(log, idx) in reversedLogs"
+          :key="log.id"
+          class="relative pb-6 last:pb-0"
+          :class="{ 'opacity-50': idx < reversedLogs.length - 1 }"
+        >
+          <div
+            class="absolute left-[-2rem] top-1 w-3.5 h-3.5 rounded-full border-2 bg-white z-10"
+            :class="
+              idx === 0
+                ? 'border-emerald-500 bg-emerald-500'
+                : 'border-gray-300'
+            "
+            aria-hidden="true"
+          />
+          <p class="text-xs text-gray-400 mb-0.5">{{ formatLogDate(log.createdAt) }}</p>
+          <p class="text-sm font-medium" :class="idx === 0 ? 'text-gray-900' : 'text-gray-500'">
+            {{ statusLabel(log.toStatus) }}
+          </p>
+          <p v-if="log.remark" class="text-xs text-gray-400 mt-0.5">{{ log.remark }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
     <div class="flex flex-wrap gap-2">
       <button v-if="order.status === 'PENDING_PAY'" class="bg-emerald-600 text-white px-4 py-2 rounded" @click="pay">去支付</button>
       <button v-if="order.status === 'PENDING_PAY'" class="border px-4 py-2 rounded" @click="cancel">取消订单</button>
@@ -25,6 +130,41 @@
       <button v-if="['PAID','SHIPPED'].includes(order.status)" class="border px-4 py-2 rounded" @click="openRefund">申请退货</button>
     </div>
 
+    <!-- 图片预览模态 -->
+    <Teleport to="body">
+      <div
+        v-if="galleryOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        @click.self="galleryOpen = false"
+      >
+        <button
+          class="absolute top-4 right-4 text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20"
+          @click="galleryOpen = false"
+        >&times;</button>
+        <div class="flex items-center gap-4 max-w-3xl w-full">
+          <button
+            v-if="galleryImages.length > 1"
+            class="text-white text-3xl shrink-0 w-10 h-10 flex items-center justify-center rounded hover:bg-white/20"
+            @click="galleryIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length"
+          >‹</button>
+          <img
+            :src="galleryImages[galleryIndex]"
+            class="max-h-[80vh] max-w-full object-contain rounded"
+            alt=""
+          />
+          <button
+            v-if="galleryImages.length > 1"
+            class="text-white text-3xl shrink-0 w-10 h-10 flex items-center justify-center rounded hover:bg-white/20"
+            @click="galleryIndex = (galleryIndex + 1) % galleryImages.length"
+          >›</button>
+        </div>
+        <div v-if="galleryImages.length > 1" class="absolute bottom-6 text-white text-sm">
+          {{ galleryIndex + 1 }} / {{ galleryImages.length }}
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- 退货弹窗 -->
     <div
       v-if="refundOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -59,27 +199,102 @@ const route = useRoute();
 const { format } = usePrice();
 const api = useApi();
 
-const order = ref<{
+interface OrderItem {
+  id: number;
+  spuTitle: string;
+  specsJson: Record<string, string>;
+  unitPrice: number;
+  quantity: number;
+  spuImage: string;
+  spuImages: string[];
+  spuMarketPrice: number;
+  spuFreightType: number;
+  spuServiceList: string;
+}
+
+type OrderRow = {
   id: number;
   orderNo: string;
   status: string;
+  totalAmount: number;
   payAmount: number;
   logisticsJson?: { company: string; trackingNo: string };
-  items: Array<{ id: number; spuTitle: string; quantity: number; unitPrice: number }>;
+  items: OrderItem[];
   statusLogs?: Array<{ id: number; toStatus: string; createdAt: string; remark?: string | null }>;
-} | null>(null);
+};
+
+const order = ref<OrderRow | null>(null);
 
 const logistics = computed(() => order.value?.logisticsJson);
+
+/** 运费文本 */
+const freightText = computed(() => {
+  if (!order.value?.items.length) return '¥0';
+  const ft = order.value.items[0].spuFreightType;
+  return ft === 1 ? '包邮' : '以结算为准';
+});
+
+/** 商品小计 */
+const itemsTotal = computed(() =>
+  order.value?.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0) ?? 0,
+);
+
+/** 优惠金额（商品总额 + 未单独算运费，这里按划线价差值展示） */
+const discountAmount = computed(() => {
+  if (!order.value) return 0;
+  const marketTotal = order.value.items.reduce(
+    (s, i) => s + (i.spuMarketPrice > 0 ? i.spuMarketPrice : i.unitPrice) * i.quantity,
+    0,
+  );
+  return Math.max(0, marketTotal - itemsTotal.value);
+});
+
+/** 轨迹倒序，最新在最上 */
+const reversedLogs = computed(() =>
+  order.value?.statusLogs ? [...order.value.statusLogs].reverse() : [],
+);
+
 const refundOpen = ref(false);
 const refundReason = ref('');
 const refundSubmitting = ref(false);
+
+/** 图片预览 */
+const galleryOpen = ref(false);
+const galleryIndex = ref(0);
+const galleryImages = ref<string[]>([]);
+
+function openGallery(itemIdx: number) {
+  if (!order.value) return;
+  const item = order.value.items[itemIdx];
+  const imgs = [item.spuImage, ...(item.spuImages ?? []).filter(Boolean)];
+  galleryImages.value = imgs;
+  galleryIndex.value = 0;
+  galleryOpen.value = true;
+}
+
+function specText(specs: Record<string, string>) {
+  return Object.entries(specs ?? {}).map(([k, v]) => `${k}:${v}`).join(' / ');
+}
+
+function parseServiceList(raw: string): string[] {
+  return (raw ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+function showMarketPrice(item: OrderItem) {
+  return item.spuMarketPrice > 0 && item.spuMarketPrice > item.unitPrice;
+}
 
 function statusLabel(s: string) {
   return ORDER_STATUS_LABEL[s as OrderStatus] ?? s;
 }
 
-function formatLogTime(v: string) {
-  return new Date(v).toLocaleString();
+function formatLogDate(v: string) {
+  const d = new Date(v);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${mm}-${dd} ${hh}:${mi}`;
 }
 
 onMounted(load);

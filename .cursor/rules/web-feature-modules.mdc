@@ -1,0 +1,37 @@
+---
+description: Web 功能模块目录约定（composables 子目录、client-mount）
+globs: "apps/web/**/*.{ts,vue}"
+alwaysApply: false
+---
+
+# Web 功能模块目录
+
+适用范围：`apps/web`。同一业务能力（如 Toast、全局弹层）**不要**拆成 `components/X.vue` + `composables/useX.ts` + `composables/x.shared.ts` 等多处平铺文件。
+
+## 必须
+
+1. **单目录聚合**：在 `composables/<模块名>/` 下集中放置该模块全部实现，例如：
+   - `composables/toast/index.ts` — `useToast`、`show`、`mountToastApp` 等对外 API
+   - `composables/toast/shared.ts` — 模块内共享状态（若需要）
+   - `composables/toast/Toast.vue` — createApp 根组件（可合并 Host/Item，单文件即可）
+2. **对外 hooks**：从 `composables/<模块名>/index.ts` 导出 `useXxx`；须在 `nuxt.config.ts` 配置 `imports.dirs: ['composables', 'composables/**']` 以支持子目录 auto-import。
+3. **createApp 挂载**：在 `composables/client-mount.ts` 注册 `mountXxxApp`，由 `plugins/client-mount.client.ts` 统一在客户端启动时调用；**禁止**为每个浮层单独新建 `plugins/xxx.client.ts`（除非有特殊加载顺序需求）。
+
+## 禁止
+
+- 禁止同一模块在 `components/` 与 `composables/` 根目录各放一份无关联的碎片文件。
+- 禁止为仅服务单一模块的 Pinia store（优先模块内 `reactive` + createApp）。
+
+## 示例
+
+```
+apps/web/composables/toast/
+  index.ts      # useToast、show、mountToastApp
+  shared.ts     # toasts 队列
+  Toast.vue     # 根 UI（单文件）
+
+apps/web/composables/client-mount.ts   # 注册 mountToastApp 等
+apps/web/plugins/client-mount.client.ts
+```
+
+页面调用：`const { toast } = useToast()`（auto-import，无需手写路径）。

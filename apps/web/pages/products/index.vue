@@ -7,7 +7,7 @@
     </p>
     <div v-if="pending" class="text-gray-500">加载中…</div>
     <div v-else-if="!list.length" class="text-gray-500 py-12 text-center">暂无相关商品</div>
-    <div v-else class="grid grid-cols-3 gap-4 bp-768:grid-cols-2 bp-375:grid-cols-1">
+    <div v-else class="grid grid-cols-4 gap-4 bp-1024:grid-cols-3 bp-768:grid-cols-2 bp-375:grid-cols-1">
       <ProductCard v-for="item in list" :key="item.id" :item="item" />
     </div>
   </div>

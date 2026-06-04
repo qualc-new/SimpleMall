@@ -1,7 +1,15 @@
 <template>
   <div>
     <h1 class="text-xl font-semibold mb-4">我的订单</h1>
-    <ul class="space-y-3">
+    <div v-if="!list.length" class="flex flex-col items-center justify-center py-20 text-gray-400">
+      <svg class="w-16 h-16 mb-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <p class="text-base">暂无订单</p>
+      <NuxtLink to="/" class="mt-4 text-sm text-emerald-600 underline">去逛逛</NuxtLink>
+    </div>
+    <ul v-else class="space-y-3">
       <li v-for="o in list" :key="o.id" class="bg-white p-4 rounded-lg shadow">
         <div class="flex justify-between text-sm">
           <span>{{ o.orderNo }}</span>

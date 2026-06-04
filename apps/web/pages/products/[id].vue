@@ -194,6 +194,7 @@
         </div>
       </aside>
     </div>
+
   </div>
 </template>
 
@@ -208,6 +209,7 @@ const api = useApi();
 const cart = useCartStore();
 const auth = useAuthStore();
 const { requireLogin } = useRequireLogin();
+const { toast } = useToast();
 if (import.meta.client) auth.hydrate();
 
 interface Sku {
@@ -440,13 +442,15 @@ async function addCart() {
   if (!requireLogin()) return;
   clampQty();
   await cart.add(currentSku.value.id, quantity.value);
-  alert('已加入购物车');
+  toast('已加入购物车');
 }
 
 function buyNow() {
   if (!currentSku.value || !canBuy.value) return;
   if (!requireLogin()) return;
   clampQty();
-  navigateTo(`/checkout?skuId=${currentSku.value.id}&qty=${quantity.value}&buyNow=1`);
+  const title = encodeURIComponent(spu.value!.title);
+  navigateTo(`/checkout?skuId=${currentSku.value.id}&qty=${quantity.value}&buyNow=1&title=${title}&price=${currentSku.value.price}`);
 }
 </script>
+

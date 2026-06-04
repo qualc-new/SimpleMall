@@ -1,7 +1,16 @@
 <template>
   <div>
     <h1 class="text-xl font-semibold mb-4">购物车</h1>
-    <div v-if="!items.length" class="text-gray-500">购物车是空的</div>
+    <div v-if="!items.length" class="flex flex-col items-center justify-center py-20 text-gray-400">
+      <svg class="w-16 h-16 mb-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 6h15l-1.5 9H8L6 6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M6 6L5 3H2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="9" cy="20" r="1.5" fill="currentColor"/>
+        <circle cx="18" cy="20" r="1.5" fill="currentColor"/>
+      </svg>
+      <p class="text-base">购物车是空的</p>
+      <NuxtLink to="/" class="mt-4 text-sm text-emerald-600 underline">去逛逛</NuxtLink>
+    </div>
     <ul v-else class="space-y-3">
       <li v-for="row in items" :key="row.id" class="bg-white p-4 rounded-lg shadow flex gap-4 items-start">
         <input v-model="row.selected" type="checkbox" :disabled="!row.valid" @change="toggle(row)" />

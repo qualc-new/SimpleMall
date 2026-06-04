@@ -134,10 +134,27 @@ export class OrderService {
   async detail(userId: number, id: number) {
     const order = await this.prisma.order.findFirst({
       where: { id, userId },
-      include: { items: true, payment: true, statusLogs: { orderBy: { id: 'asc' } } },
+      include: {
+        items: { include: { sku: { include: { spu: true } } } },
+        payment: true,
+        statusLogs: { orderBy: { id: 'asc' } },
+      },
     });
     if (!order) throw BizError.notFound();
-    return order;
+
+    // 为每个订单行附加 SPU 层信息（主图、轮播、市场价、运费、服务保障等）
+    return {
+      ...order,
+      items: order.items.map((item) => ({
+        ...item,
+        spuImage: item.sku.spu.mainImage,
+        spuImages: (item.sku.spu.imagesJson as string[]) ?? [],
+        spuMarketPrice: item.sku.spu.marketPrice,
+        spuFreightType: item.sku.spu.freightType,
+        spuExpressId: item.sku.spu.expressId,
+        spuServiceList: item.sku.spu.serviceList,
+      })),
+    };
   }
 
   async cancel(userId: number, id: number) {
