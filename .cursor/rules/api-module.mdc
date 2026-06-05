@@ -1,0 +1,30 @@
+---
+description: NestJS API 模块约定（apps/api）
+globs: "apps/api/**/*.ts"
+alwaysApply: false
+---
+
+# API 模块约定
+
+## 分层
+
+- `modules/core/<域>/`：领域 Service（库存、订单状态机等）
+- `modules/web/`：用户端 Controller
+- `modules/admin/`：管理端 Controller
+- DTO 放各模块 `dto/`，用 `class-validator` + 中文业务说明
+
+## 路由与版本
+
+- 用户端：`/api/v1/*`
+- 管理端：`/api/v1/admin/*`；用户管理 v2：`/api/v2/admin/users`
+- 业务异常：`BizError.*`，勿裸抛 `Error`
+
+## Prisma
+
+- 表字段 snake_case，`@map` 对齐 TS 属性
+- 改 schema 后：`prisma migrate dev`；MySQL COMMENT 走 `prisma/scripts/generate-column-comments-sql.mjs`
+- 库存/支付/订单状态变更：Service 内写 JSDoc 说明副作用
+
+## 共享契约
+
+- 枚举与 `*_LABEL` 只定义在 `@simplemall/shared`，API 引用 `dist` 构建产物

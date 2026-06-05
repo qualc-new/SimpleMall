@@ -20,6 +20,7 @@
 ```
 docs/
 ├── README.md                          ← 本索引
+├── Harness工程化体系.md                ← Agent Harness（约束/验证/工作流）
 ├── 版本迭代说明.md                     ← 发版记录、升级注意（推荐阅读）
 ├── 轻量电商系统架构说明书.md           ← 系统级（必读）
 ├── 共享接口与约定.md                   ← 三端共同契约（必读）
@@ -28,6 +29,18 @@ docs/
 ├── 管理后台开发设计文档.md             ← apps/admin (React)
 └── TCB部署说明.md                      ← 腾讯云开发（Prisma + 云托管）
 ```
+
+### Agent / Harness（AI 协作）
+
+| 路径 | 说明 |
+| ---- | ---- |
+| 根目录 `AGENTS.md` | Agent 统一入口 |
+| `docs/Harness工程化体系.md` | Harness 三层架构与决策树 |
+| `.cursor/rules/` | Cursor 约束规则 |
+| `.agents/skills/simplemall/` | 项目技能（验证、Spec、TCB） |
+| `harness/verify.sh` | 交付前类型/构建验证 |
+| `harness/progress.md` | 跨会话进度交接 |
+| `specs/` | 中大型需求 Spec 产物 |
 
 ### 阅读顺序（新成员）
 
@@ -44,7 +57,8 @@ docs/
 | 新增/修改 API 路径或 DTO     | 共享约定 + 服务端 + 调用方（Web/Admin） |
 | SPU 商品状态枚举或同步规则   | 共享约定 + 架构说明书 + 三端 + 版本迭代说明 |
 | 发版、里程碑、升级注意       | 版本迭代说明 + 根 README 必要时          |
-| Agent 默认行为（命名、记版本） | `.cursor/rules/` + 根目录 `AGENTS.md`    |
+| Agent 默认行为（命名、记版本） | `.cursor/rules/` + `AGENTS.md` + `docs/Harness工程化体系.md` |
+| Harness 验证脚本或 CI | `harness/` + `docs/Harness工程化体系.md` + `docs/版本迭代说明.md` |
 | 仅 UI/交互调整               | 对应端开发设计文档                      |
 
 ---

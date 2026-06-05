@@ -1,0 +1,27 @@
+---
+description: React 管理后台约定（apps/admin）
+globs: "apps/admin/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# 管理后台约定
+
+## 结构
+
+- 页面：`pages/<域>/` 或 `pages/<Name>/index.tsx`
+- API 客户端：`services/`；401 处理见 `adminUnauthorized.ts`
+- TCB 子路径：`utils/basePath.ts` 处理 `/admin` basename
+
+## 数据展示
+
+- 订单/SPU/标签状态：用 `@simplemall/shared` 的 `*_LABEL`，勿硬编码中文
+- 金额：分↔元换算处加一行注释说明单位
+
+## 表单与列表
+
+- Ant Design 组件；复杂商品表单参考 `pages/Product/`
+- 列表分页与 API `PageResult` 对齐
+
+## 请求
+
+- 开发态 Vite 代理 `/api`；TCB 构建时 `VITE_API_BASE` 由 `deploy/tcb/resolve-api-base.sh` 校验
