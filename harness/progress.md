@@ -14,6 +14,8 @@
 
 | 日期 | 模块 | 摘要 | 验证 |
 | ---- | ---- | ---- | ---- |
+| 2026-06-05 | deploy, docs | TCB 非灰度重部署（simplemall-api 18:16 + 静态 /web·/admin）；README 增加线上访问入口 | API health 200、静态 200 |
+| 2026-06-05 | apps/web, docs | v0.12.3：AI 对话移动端 FAB 点击打开 + 全屏抽屉布局 | `./harness/verify.sh types` 通过 |
 | 2026-06-05 | apps/web, apps/api, docs | v0.12.2：订单信息与确认订单体验（详情 key-value、结算商品/地址/图预览、ImagePreviewCarousel、cart 扩展） | `./harness/verify.sh types` 通过 |
 
 ## 进行中 / 阻塞

@@ -7,7 +7,7 @@
           <div class="flex items-center gap-2.5">
             <span class="text-xl">🤖</span>
             <div>
-              <h3 class="text-sm font-semibold text-gray-800">AI 助手</h3>
+              <h3 class="text-sm font-semibold text-white">AI 助手</h3>
               <p class="text-[11px] text-gray-400">智能购物顾问</p>
             </div>
           </div>
@@ -185,13 +185,19 @@ function renderContent(text: string): string {
   flex-direction: column;
   overflow: hidden;
 }
-@media (max-width: 480px) {
+/* 移动端：底部全宽抽屉，避免右下角小窗被挤出视口 */
+@media (max-width: 768px) {
   .ai-chat-dialog {
-    right: 8px;
-    bottom: 80px;
-    width: calc(100vw - 16px);
-    height: calc(100vh - 140px);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    height: min(88dvh, 100dvh);
     max-height: none;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
   }
 }
 
@@ -408,5 +414,12 @@ function renderContent(text: string): string {
 .chat-slide-leave-to {
   opacity: 0;
   transform: translateY(20px) scale(0.95);
+}
+@media (max-width: 768px) {
+  .chat-slide-enter-from,
+  .chat-slide-leave-to {
+    opacity: 1;
+    transform: translateY(100%);
+  }
 }
 </style>

@@ -5,9 +5,8 @@
       ref="btnRef"
       class="ai-chat-fab"
       :style="fabStyle"
-      @mousedown.prevent="onTouchStart"
-      @touchstart.prevent="onTouchStart"
-      @click.stop="onClick"
+      @mousedown.prevent="onPointerDown"
+      @touchstart="onPointerDown"
     >
       <span class="ai-chat-fab__icon">🤖</span>
       <span v-if="!store.isOpen" class="ai-chat-fab__badge">AI</span>
@@ -24,8 +23,12 @@ const btnRef = ref<HTMLElement | null>(null);
 const posX = ref(0);
 const posY = ref(0);
 const dragging = ref(false);
+/** 位移超过该阈值视为拖拽，否则视为点击打开 */
+const TAP_THRESHOLD = 10;
 let startX = 0;
 let startY = 0;
+let originX = 0;
+let originY = 0;
 let moved = false;
 
 const fabStyle = computed(() => ({
@@ -38,30 +41,47 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
 }
 
-function onTouchStart(e: MouseEvent | TouchEvent) {
+function placeFabDefault() {
+  const margin = 16;
+  const size = 56;
+  posX.value = Math.max(margin, window.innerWidth - size - margin);
+  // 移动端底部常有 Tab/购买栏，抬高默认位置避免被遮挡
+  const bottomGap = window.innerWidth <= 768 ? 96 : 72;
+  posY.value = Math.max(margin, window.innerHeight - size - bottomGap);
+}
+
+function onPointerDown(e: MouseEvent | TouchEvent) {
   if ((e.target as HTMLElement).closest('.chat-toggle-ignore')) return;
   dragging.value = true;
   moved = false;
   const pt = 'touches' in e ? e.touches[0] : e;
+  originX = pt.clientX;
+  originY = pt.clientY;
   startX = pt.clientX - posX.value;
   startY = pt.clientY - posY.value;
 
   const onMove = (ev: MouseEvent | TouchEvent) => {
     if (!dragging.value) return;
     const p = 'touches' in ev ? ev.touches[0] : ev;
-    const dx = Math.abs(p.clientX - startX - posX.value);
-    const dy = Math.abs(p.clientY - startY - posY.value);
-    if (dx > 3 || dy > 3) moved = true;
+    if (Math.abs(p.clientX - originX) > TAP_THRESHOLD || Math.abs(p.clientY - originY) > TAP_THRESHOLD) {
+      moved = true;
+    }
+    if (!moved) return;
+    if ('touches' in ev) ev.preventDefault();
     posX.value = clamp(p.clientX - startX, 8, window.innerWidth - 64);
     posY.value = clamp(p.clientY - startY, 8, window.innerHeight - 64);
   };
 
-  const onUp = () => {
+  const onUp = (ev: MouseEvent | TouchEvent) => {
+    if (!moved) {
+      store.open();
+    }
     dragging.value = false;
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseup', onUp);
     window.removeEventListener('touchmove', onMove);
     window.removeEventListener('touchend', onUp);
+    void ev;
   };
 
   window.addEventListener('mousemove', onMove);
@@ -70,15 +90,14 @@ function onTouchStart(e: MouseEvent | TouchEvent) {
   window.addEventListener('touchend', onUp);
 }
 
-function onClick() {
-  if (moved) return;
-  store.toggle();
-}
-
 onMounted(() => {
-  posX.value = window.innerWidth - 72;
-  posY.value = window.innerHeight - 160;
+  placeFabDefault();
   mounted.value = true;
+  window.addEventListener('resize', placeFabDefault);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', placeFabDefault);
 });
 </script>
 
@@ -97,6 +116,7 @@ onMounted(() => {
   justify-content: center;
   cursor: pointer;
   user-select: none;
+  touch-action: none;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .ai-chat-fab:hover {
