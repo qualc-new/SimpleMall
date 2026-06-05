@@ -7,15 +7,16 @@
 
 - **任务**：（无）
 - **状态**：idle
-- **分支**：main
+- **分支**：feature/ai-chat
 - **最后更新**：2026-06-05
 
 ## 最近完成
 
 | 日期 | 模块 | 摘要 | 验证 |
 | ---- | ---- | ---- | ---- |
-| 2026-06-05 | `.github/workflows` | CI 升级 Actions v6 + Node.js 24，消除 GitHub Node 20 弃用警告 | `./harness/verify.sh types` 通过 |
-| 2026-06-05 | docs / harness / .cursor / .agents / CI | Harness 工程化体系（v0.11.0）：约束、verify、hooks、Spec、技能 | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | deploy, docs | TCB 非灰度重部署（simplemall-api 18:16 + 静态 /web·/admin）；README 增加线上访问入口 | API health 200、静态 200 |
+| 2026-06-05 | apps/web, docs | v0.12.3：AI 对话移动端 FAB 点击打开 + 全屏抽屉布局 | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | apps/web, apps/api, docs | v0.12.2：订单信息与确认订单体验（详情 key-value、结算商品/地址/图预览、ImagePreviewCarousel、cart 扩展） | `./harness/verify.sh types` 通过 |
 
 ## 进行中 / 阻塞
 
@@ -23,11 +24,9 @@
 
 ## 下一步
 
-1. 推送后确认 GitHub Actions `Harness Verify` 无弃用警告且绿勾
-2. 可选：补 pre-commit 或 Playwright E2E（见 `docs/Harness工程化体系.md`）
+1. 合并 `feature/ai-chat` 并推送
+2. 可选：云托管修正 `REDIS_URL`（对话历史 Redis 缓存）
 
 ## 决策与约束（本会话有效）
 
-- 本地开发优先 `./dev.sh`；`engines.node` 仍 `>=20`，CI 使用 Node 24
-- 有交付价值时更新 `docs/版本迭代说明.md`
-- 交付前运行 `./harness/verify.sh types`（大改运行 `all`）
+- 版本说明：v0.12.2～v0.12.6 补丁已合并为 v0.12.2 一条总结

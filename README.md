@@ -10,6 +10,19 @@
 | Web 商城 | `apps/web`   | 3000 |
 | 管理后台 | `apps/admin` | 5173 |
 
+## 线上访问（腾讯云开发 TCB）
+
+环境 ID：`qualc-free-d6gba939q4d76760d`
+
+| 端       | 地址                                                                                                                                                 |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 商城     | [https://qualc-free-d6gba939q4d76760d-1251010392.tcloudbaseapp.com/web/](https://qualc-free-d6gba939q4d76760d-1251010392.tcloudbaseapp.com/web/)     |
+| 管理后台 | [https://qualc-free-d6gba939q4d76760d-1251010392.tcloudbaseapp.com/admin/](https://qualc-free-d6gba939q4d76760d-1251010392.tcloudbaseapp.com/admin/) |
+
+根路径 `/` 自动跳转至 `/web/`。线上账号与本地 seed 相同（管理端 `admin` / `admin123`，C 端 `13800138000` / `user123`）。
+
+部署与变量配置见 [docs/TCB部署说明.md](./docs/TCB部署说明.md)；静态构建需根目录 `.env` 配置 `NUXT_PUBLIC_API_BASE` 等（参考 `.env.tcb.example`）。
+
 ## 快速开始（推荐 dev.sh）
 
 ```bash
@@ -55,34 +68,34 @@ Docker Desktop 已运行?
 
 ### 命令一览
 
-| 命令 | 说明 |
-|------|------|
-| `./dev.sh` | 一键启动（默认） |
-| `./dev.sh stop` | 只停三端 Node 进程 |
-| `./dev.sh stop --all` | 停三端 + 停 Docker 中 mysql/redis |
-| `./dev.sh status` | 查看容器与端口 |
-| `./dev.sh docker up` | 只起数据库 |
-| `./dev.sh docker logs mysql` | 查看 MySQL 日志 |
+| 命令                         | 说明                              |
+| ---------------------------- | --------------------------------- |
+| `./dev.sh`                   | 一键启动（默认）                  |
+| `./dev.sh stop`              | 只停三端 Node 进程                |
+| `./dev.sh stop --all`        | 停三端 + 停 Docker 中 mysql/redis |
+| `./dev.sh status`            | 查看容器与端口                    |
+| `./dev.sh docker up`         | 只起数据库                        |
+| `./dev.sh docker logs mysql` | 查看 MySQL 日志                   |
 
 ### 环境变量
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `SKIP_DOCKER` | — | 设为 `1` 时使用本机 MySQL/Redis，不启 Docker |
-| `SKIP_MIGRATE` | — | 设为 `1` 时跳过 Prisma 迁移 |
-| `API_PORT` | 4000 | API 端口 |
-| `WEB_PORT` | 3000 | 商城端口 |
-| `ADMIN_PORT` | 5173 | 后台端口 |
+| 变量           | 默认值 | 说明                                         |
+| -------------- | ------ | -------------------------------------------- |
+| `SKIP_DOCKER`  | —      | 设为 `1` 时使用本机 MySQL/Redis，不启 Docker |
+| `SKIP_MIGRATE` | —      | 设为 `1` 时跳过 Prisma 迁移                  |
+| `API_PORT`     | 4000   | API 端口                                     |
+| `WEB_PORT`     | 3000   | 商城端口                                     |
+| `ADMIN_PORT`   | 5173   | 后台端口                                     |
 
 示例：`SKIP_DOCKER=1 ./dev.sh`、`API_PORT=4001 ./dev.sh`
 
 ### 日志与排错
 
-| 路径 | 内容 |
-|------|------|
-| `.dev/logs/api.log` | Nest API 输出 |
-| `.dev/logs/web.log` | Nuxt 输出 |
-| `.dev/logs/admin.log` | Vite 后台输出 |
+| 路径                    | 内容            |
+| ----------------------- | --------------- |
+| `.dev/logs/api.log`     | Nest API 输出   |
+| `.dev/logs/web.log`     | Nuxt 输出       |
+| `.dev/logs/admin.log`   | Vite 后台输出   |
 | `.dev/logs/migrate.log` | Prisma 迁移输出 |
 
 - **Docker 未运行**：脚本直接报错，请先打开 Docker Desktop。
@@ -93,10 +106,10 @@ Docker Desktop 已运行?
 
 ### Docker 容器（docker-compose.yml）
 
-| 容器名 | 镜像 | 端口 | 备注 |
-|--------|------|------|------|
-| `simplemall-mysql` | mysql:8.0 | 3306 | 库名 `simplemall`，root 密码 `root` |
-| `simplemall-redis` | redis:7-alpine | 6379 | 无密码 |
+| 容器名             | 镜像           | 端口 | 备注                                |
+| ------------------ | -------------- | ---- | ----------------------------------- |
+| `simplemall-mysql` | mysql:8.0      | 3306 | 库名 `simplemall`，root 密码 `root` |
+| `simplemall-redis` | redis:7-alpine | 6379 | 无密码                              |
 
 ## 其他常用命令
 

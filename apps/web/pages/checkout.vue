@@ -1,63 +1,274 @@
 <template>
-  <div class="max-w-lg">
+  <div class="max-w-2xl pb-24">
     <h1 class="text-xl font-semibold mb-4">确认订单</h1>
-    <NuxtLink to="/user/addresses" class="text-sm text-emerald-600 mb-2 inline-block">管理地址</NuxtLink>
-    <div v-if="address" class="bg-white p-4 rounded-lg shadow mb-4 text-sm border-2 border-emerald-500">
-      <p class="font-medium">{{ address.name }} {{ address.phone }}</p>
-      <p class="text-gray-600">
-        {{ address.province }}{{ address.city }}{{ address.district }}{{ address.detail }}
-      </p>
-    </div>
-    <p v-else class="text-red-500 text-sm mb-4">
-      暂无地址，请先 <NuxtLink to="/user/addresses" class="underline">添加收货地址</NuxtLink>
-    </p>
-    <ul class="bg-white rounded-lg shadow divide-y mb-4 text-sm">
-      <li v-for="row in lines" :key="row.id" class="p-3 flex justify-between">
-        <span>{{ row.sku.spuTitle }} × {{ row.quantity }}</span>
-        <span>{{ format(row.sku.price * row.quantity) }}</span>
-      </li>
-    </ul>
-    <p class="font-medium mb-4">应付：{{ format(total) }}</p>
+
+    <!-- 收货地址：点击进入选择页，返回后回显 -->
     <button
-      class="w-full bg-emerald-600 text-white py-2 rounded-lg disabled:opacity-50"
+      type="button"
+      class="w-full bg-white p-4 rounded-xl shadow mb-4 text-left transition-colors hover:bg-gray-50"
+      @click="goPickAddress"
+    >
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-500">配送地址</span>
+        <span class="text-gray-400 text-lg leading-none" aria-hidden="true">›</span>
+      </div>
+      <template v-if="address">
+        <p class="font-medium text-gray-900">{{ address.name }} {{ address.phone }}</p>
+        <p class="text-sm text-gray-600 mt-1">
+          {{ address.province }}{{ address.city }}{{ address.district }}{{ address.detail }}
+        </p>
+      </template>
+      <p v-else class="text-emerald-600 text-sm">请选择收货地址</p>
+    </button>
+
+    <!-- 商品信息（样式对齐订单详情） -->
+    <div class="bg-white p-6 rounded-xl shadow mb-4">
+      <h2 class="text-base font-semibold text-gray-900 mb-4">商品信息</h2>
+      <ul v-if="lines.length" class="divide-y divide-gray-100">
+        <li v-for="(row, idx) in lines" :key="row.id" class="py-4 first:pt-0 last:pb-0">
+          <div class="flex gap-4">
+            <!-- 商品图片（可点击预览轮播） -->
+            <div class="relative shrink-0">
+              <img
+                v-if="row.sku.mainImage"
+                :src="row.sku.mainImage"
+                class="w-24 h-24 object-cover rounded-lg cursor-pointer border border-gray-100"
+                alt=""
+                @click="openGallery(idx)"
+              />
+              <div
+                v-else
+                class="w-24 h-24 rounded-lg bg-gray-100 border border-gray-100"
+              />
+              <button
+                v-if="lineImageCount(row) > 1"
+                type="button"
+                class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded"
+                @click.stop="openGallery(idx)"
+              >
+                {{ lineImageCount(row) }}图
+              </button>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-900 line-clamp-2">{{ row.sku.spuTitle }}</p>
+              <p v-if="specText(row.sku.specs)" class="text-xs text-gray-500 mt-1">
+                {{ specText(row.sku.specs) }}
+              </p>
+              <div
+                v-if="row.sku.serviceGuarantees?.length"
+                class="flex flex-wrap gap-1 mt-2"
+              >
+                <span
+                  v-for="s in row.sku.serviceGuarantees"
+                  :key="s"
+                  class="text-[10px] text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded"
+                >{{ s }}</span>
+              </div>
+            </div>
+            <div class="shrink-0 text-right">
+              <p class="text-base font-semibold text-gray-900">{{ format(row.sku.price) }}</p>
+              <p
+                v-if="showMarketPrice(row)"
+                class="text-xs text-gray-400 line-through"
+              >
+                {{ format(row.sku.spuMarketPrice!) }}
+              </p>
+              <p class="text-sm text-gray-400 mt-1">× {{ row.quantity }}</p>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p v-else class="text-sm text-gray-500">暂无商品，请返回购物车选择</p>
+    </div>
+
+    <!-- 金额汇总 -->
+    <div class="bg-white p-4 rounded-xl shadow text-sm space-y-2 mb-4">
+      <div class="flex justify-between text-gray-600">
+        <span>商品合计</span>
+        <span>{{ format(total) }}</span>
+      </div>
+      <div class="flex justify-between font-semibold text-gray-900 text-base pt-2 border-t border-gray-100">
+        <span>应付金额</span>
+        <span class="text-emerald-700">{{ format(total) }}</span>
+      </div>
+    </div>
+
+    <button
+      class="w-full bg-emerald-600 text-white py-3 rounded-xl font-medium disabled:opacity-50"
       :disabled="submitting || !address || !lines.length"
       @click="submit"
     >
       {{ submitting ? '提交中…' : '提交订单并支付' }}
     </button>
+
+    <ImagePreviewCarousel
+      v-model="galleryOpen"
+      :images="galleryImages"
+      :initial-index="galleryInitialIndex"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { loadPickedAddress, type PickedAddress } from '../composables/useAddressPick';
+
 definePageMeta({ middleware: 'auth' });
 
 const { format } = usePrice();
 const api = useApi();
 const route = useRoute();
 const submitting = ref(false);
-const address = ref<{ id: number; name: string; phone: string; province: string; city: string; district: string; detail: string } | null>(null);
-const lines = ref<Array<{ id: number; quantity: number; sku: { spuTitle: string; price: number } }>>([]);
+
+type AddressRow = PickedAddress & {
+  name: string;
+  phone: string;
+  detail: string;
+};
+
+interface CheckoutLine {
+  id: number;
+  quantity: number;
+  sku: {
+    spuTitle: string;
+    price: number;
+    mainImage?: string;
+    spuImages?: string[];
+    spuMarketPrice?: number;
+    serviceGuarantees?: string[];
+    specs?: Record<string, string>;
+  };
+}
+
+const address = ref<AddressRow | null>(null);
+const lines = ref<CheckoutLine[]>([]);
 
 const total = computed(() => lines.value.reduce((s, r) => s + r.sku.price * r.quantity, 0));
 
-onMounted(async () => {
-  const addrs = await api<typeof address.value[]>('/addresses');
-  address.value = addrs.find((a) => a?.isDefault) ?? addrs[0] ?? null;
+/** 图片预览轮播 */
+const galleryOpen = ref(false);
+const galleryInitialIndex = ref(0);
+const galleryImages = ref<string[]>([]);
 
+function specText(specs: Record<string, string> | undefined) {
+  if (!specs) return '';
+  return Object.entries(specs)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(' / ');
+}
+
+/** 合并主图与图册，去重 */
+function lineImages(row: CheckoutLine): string[] {
+  const main = row.sku.mainImage;
+  const extra = (row.sku.spuImages ?? []).filter(Boolean);
+  if (!main) return extra;
+  return [main, ...extra.filter((url) => url !== main)];
+}
+
+function lineImageCount(row: CheckoutLine) {
+  return lineImages(row).length;
+}
+
+function showMarketPrice(row: CheckoutLine) {
+  const mp = row.sku.spuMarketPrice ?? 0;
+  return mp > 0 && mp > row.sku.price;
+}
+
+function openGallery(itemIdx: number) {
+  const imgs = lineImages(lines.value[itemIdx]);
+  if (!imgs.length) return;
+  galleryImages.value = imgs;
+  galleryInitialIndex.value = 0;
+  galleryOpen.value = true;
+}
+
+/** 优先使用地址选择页回传的地址，否则取默认地址 */
+async function loadAddress() {
+  const addrs = await api<AddressRow[]>('/addresses');
+  const picked = loadPickedAddress();
+  if (picked?.id) {
+    const found = addrs.find((a) => a.id === picked.id);
+    address.value = found ?? (picked as AddressRow);
+    return;
+  }
+  address.value = addrs.find((a) => a.isDefault) ?? addrs[0] ?? null;
+}
+
+function parseJsonFromQuery(raw: unknown): Record<string, string> | string[] | undefined {
+  if (typeof raw !== 'string' || !raw) return undefined;
+  try {
+    return JSON.parse(decodeURIComponent(raw)) as Record<string, string> | string[];
+  } catch {
+    return undefined;
+  }
+}
+
+async function loadLines() {
   if (route.query.buyNow && route.query.skuId) {
-    const title = typeof route.query.title === 'string' ? route.query.title : '';
+    const title =
+      typeof route.query.title === 'string' ? decodeURIComponent(route.query.title) : '';
     const price = Number(route.query.price) || 0;
     const qty = Number(route.query.qty) || 1;
-    lines.value = [{
-      id: 0,
-      quantity: qty,
-      sku: { spuTitle: title, price },
-    }];
+    const image =
+      typeof route.query.image === 'string' ? decodeURIComponent(route.query.image) : undefined;
+    const specs = parseJsonFromQuery(route.query.specs) as Record<string, string> | undefined;
+    const spuImages = (parseJsonFromQuery(route.query.images) as string[] | undefined) ?? [];
+    const spuMarketPrice = Number(route.query.marketPrice) || 0;
+    const serviceGuarantees =
+      (parseJsonFromQuery(route.query.services) as string[] | undefined) ?? [];
+    lines.value = [
+      {
+        id: 0,
+        quantity: qty,
+        sku: {
+          spuTitle: title,
+          price,
+          mainImage: image,
+          spuImages,
+          spuMarketPrice: spuMarketPrice || undefined,
+          serviceGuarantees,
+          specs,
+        },
+      },
+    ];
     return;
   }
 
-  const cart = await api<Array<{ id: number; quantity: number; selected: boolean; valid: boolean; sku: { spuTitle: string; price: number } }>>('/cart');
+  const cart = await api<
+    Array<{
+      id: number;
+      quantity: number;
+      selected: boolean;
+      valid: boolean;
+      sku: {
+        spuTitle: string;
+        price: number;
+        mainImage: string;
+        spuImages?: string[];
+        spuMarketPrice?: number;
+        serviceGuarantees?: string[];
+        specs: Record<string, string>;
+      };
+    }>
+  >('/cart');
   lines.value = cart.filter((c) => c.selected && c.valid);
+}
+
+function goPickAddress() {
+  navigateTo({
+    path: '/user/addresses',
+    query: { pick: '1', from: route.fullPath },
+  });
+}
+
+async function init() {
+  await Promise.all([loadAddress(), loadLines()]);
+}
+
+onMounted(init);
+
+/** 从地址选择页后退返回时重新回显 */
+onActivated(() => {
+  loadAddress();
 });
 
 async function submit() {

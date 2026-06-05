@@ -1,7 +1,14 @@
 /**
  * 全站内容区宽度（桌面优先，禁止 min/max/clamp 函数）
  * 默认 1920：主栏最大 1280px
+ *
+ * 浮层层级（由低到高）：
+ * 商品底栏 25 → 顶栏 30 → AI 入口 90 → AI 面板 95 → 登录弹窗 100
  */
+:root {
+  --z-chat-fab: 90;
+  --z-chat-dialog: 95;
+}
 
 .site-container {
   width: 100%;

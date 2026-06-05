@@ -45,10 +45,20 @@
     <div
       v-if="showForm"
       class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
-      @click.self="showForm = false"
+      @click.self="closeForm"
     >
-      <form class="bg-white rounded-xl p-6 w-full max-w-md space-y-2" @submit.prevent="save">
-        <h2 class="font-semibold">{{ form.id ? '编辑' : '新增' }}地址</h2>
+      <form class="bg-white rounded-xl p-6 w-full max-w-md space-y-2 relative" @submit.prevent="save">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-semibold">{{ form.id ? '编辑' : '新增' }}地址</h2>
+          <button
+            type="button"
+            class="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            aria-label="关闭"
+            @click="closeForm"
+          >
+            ✕
+          </button>
+        </div>
         <input v-model="form.name" class="w-full border rounded px-3 py-2" placeholder="收货人" required />
         <input v-model="form.phone" class="w-full border rounded px-3 py-2" placeholder="手机号" required />
         <input v-model="form.province" class="w-full border rounded px-3 py-2" placeholder="省" required />
@@ -113,11 +123,34 @@ function pickAddress(a: AddressItem) {
     detail: a.detail,
     isDefault: a.isDefault,
   });
+  // 选择模式用浏览器后退返回上一页，避免 navigateTo 重复压栈导致后退循环
+  if (pickMode.value) {
+    router.back();
+    return;
+  }
   if (returnTo.value) {
     navigateTo(returnTo.value);
   } else {
     router.back();
   }
+}
+
+function resetForm() {
+  Object.assign(form, {
+    id: 0,
+    name: '',
+    phone: '',
+    province: '',
+    city: '',
+    district: '',
+    detail: '',
+    isDefault: false,
+  });
+}
+
+function closeForm() {
+  showForm.value = false;
+  resetForm();
 }
 
 function edit(a: AddressItem) {
@@ -133,7 +166,7 @@ async function save() {
   } else {
     await api('/addresses', { method: 'POST', body });
   }
-  showForm.value = false;
+  closeForm();
   await load();
   if (pickMode.value && list.value.length === 1) {
     pickAddress(list.value[0]);

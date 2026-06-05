@@ -18,10 +18,51 @@
       </div>
     </div>
 
-    <!-- 物流信息 -->
-    <div v-if="logistics" class="bg-white p-4 rounded-xl shadow text-sm space-y-1">
-      <p><span class="text-gray-400">物流公司</span> {{ logistics.company }}</p>
-      <p><span class="text-gray-400">快递单号</span> {{ logistics.trackingNo }}</p>
+    <!-- 订单信息：key-value 左右布局 -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-base font-semibold text-gray-900 mb-4">订单信息</h2>
+      <dl class="divide-y divide-gray-100 text-sm">
+        <div v-if="shippingAddress" class="flex gap-4 py-3 first:pt-0">
+          <dt class="text-gray-500 w-20 shrink-0">配送地址</dt>
+          <dd class="flex-1 text-gray-900 text-right min-w-0">
+            <p class="font-medium">{{ shippingAddress.name }} {{ shippingAddress.phone }}</p>
+            <p class="text-gray-600 mt-0.5 break-words">{{ shippingAddress.full }}</p>
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4 py-3">
+          <dt class="text-gray-500 shrink-0">下单时间</dt>
+          <dd class="text-gray-900 text-right">{{ formatDateTime(order.createdAt) }}</dd>
+        </div>
+        <div
+          v-if="order.updatedAt && order.updatedAt !== order.createdAt"
+          class="flex justify-between gap-4 py-3"
+        >
+          <dt class="text-gray-500 shrink-0">更新时间</dt>
+          <dd class="text-gray-900 text-right">{{ formatDateTime(order.updatedAt) }}</dd>
+        </div>
+        <div v-if="order.payment" class="flex justify-between gap-4 py-3">
+          <dt class="text-gray-500 shrink-0">支付方式</dt>
+          <dd class="text-gray-900 text-right">{{ payChannelLabel(order.payment.channel) }}</dd>
+        </div>
+        <div v-if="order.payment?.paidAt" class="flex justify-between gap-4 py-3">
+          <dt class="text-gray-500 shrink-0">支付时间</dt>
+          <dd class="text-gray-900 text-right">{{ formatDateTime(order.payment.paidAt) }}</dd>
+        </div>
+        <div v-if="order.remark" class="flex gap-4 py-3">
+          <dt class="text-gray-500 w-20 shrink-0">买家留言</dt>
+          <dd class="flex-1 text-gray-900 text-right break-words">{{ order.remark }}</dd>
+        </div>
+        <template v-if="logistics">
+          <div class="flex justify-between gap-4 py-3">
+            <dt class="text-gray-500 shrink-0">物流公司</dt>
+            <dd class="text-gray-900 text-right">{{ logistics.company }}</dd>
+          </div>
+          <div class="flex justify-between gap-4 py-3 last:pb-0">
+            <dt class="text-gray-500 shrink-0">快递单号</dt>
+            <dd class="text-gray-900 text-right break-all">{{ logistics.trackingNo }}</dd>
+          </div>
+        </template>
+      </dl>
     </div>
 
     <!-- 商品列表 -->
@@ -130,39 +171,11 @@
       <button v-if="['PAID','SHIPPED'].includes(order.status)" class="border px-4 py-2 rounded" @click="openRefund">申请退货</button>
     </div>
 
-    <!-- 图片预览模态 -->
-    <Teleport to="body">
-      <div
-        v-if="galleryOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-        @click.self="galleryOpen = false"
-      >
-        <button
-          class="absolute top-4 right-4 text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20"
-          @click="galleryOpen = false"
-        >&times;</button>
-        <div class="flex items-center gap-4 max-w-3xl w-full">
-          <button
-            v-if="galleryImages.length > 1"
-            class="text-white text-3xl shrink-0 w-10 h-10 flex items-center justify-center rounded hover:bg-white/20"
-            @click="galleryIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length"
-          >‹</button>
-          <img
-            :src="galleryImages[galleryIndex]"
-            class="max-h-[80vh] max-w-full object-contain rounded"
-            alt=""
-          />
-          <button
-            v-if="galleryImages.length > 1"
-            class="text-white text-3xl shrink-0 w-10 h-10 flex items-center justify-center rounded hover:bg-white/20"
-            @click="galleryIndex = (galleryIndex + 1) % galleryImages.length"
-          >›</button>
-        </div>
-        <div v-if="galleryImages.length > 1" class="absolute bottom-6 text-white text-sm">
-          {{ galleryIndex + 1 }} / {{ galleryImages.length }}
-        </div>
-      </div>
-    </Teleport>
+    <ImagePreviewCarousel
+      v-model="galleryOpen"
+      :images="galleryImages"
+      :initial-index="galleryInitialIndex"
+    />
 
     <!-- 退货弹窗 -->
     <div
@@ -212,13 +225,28 @@ interface OrderItem {
   spuServiceList: string;
 }
 
+/** 下单时收货地址快照 */
+interface OrderAddressSnapshot {
+  name: string;
+  phone: string;
+  province: string;
+  city: string;
+  district: string;
+  detail: string;
+}
+
 type OrderRow = {
   id: number;
   orderNo: string;
   status: string;
   totalAmount: number;
   payAmount: number;
+  remark?: string | null;
+  addressJson: OrderAddressSnapshot;
+  createdAt: string;
+  updatedAt: string;
   logisticsJson?: { company: string; trackingNo: string };
+  payment?: { channel: string; paidAt?: string | null } | null;
   items: OrderItem[];
   statusLogs?: Array<{ id: number; toStatus: string; createdAt: string; remark?: string | null }>;
 };
@@ -226,6 +254,17 @@ type OrderRow = {
 const order = ref<OrderRow | null>(null);
 
 const logistics = computed(() => order.value?.logisticsJson);
+
+/** 配送地址展示（addressJson 为下单快照） */
+const shippingAddress = computed(() => {
+  const addr = order.value?.addressJson;
+  if (!addr?.name) return null;
+  return {
+    name: addr.name,
+    phone: addr.phone,
+    full: `${addr.province}${addr.city}${addr.district}${addr.detail}`,
+  };
+});
 
 /** 运费文本 */
 const freightText = computed(() => {
@@ -260,7 +299,7 @@ const refundSubmitting = ref(false);
 
 /** 图片预览 */
 const galleryOpen = ref(false);
-const galleryIndex = ref(0);
+const galleryInitialIndex = ref(0);
 const galleryImages = ref<string[]>([]);
 
 function openGallery(itemIdx: number) {
@@ -268,7 +307,7 @@ function openGallery(itemIdx: number) {
   const item = order.value.items[itemIdx];
   const imgs = [item.spuImage, ...(item.spuImages ?? []).filter(Boolean)];
   galleryImages.value = imgs;
-  galleryIndex.value = 0;
+  galleryInitialIndex.value = 0;
   galleryOpen.value = true;
 }
 
@@ -295,6 +334,20 @@ function formatLogDate(v: string) {
   const hh = String(d.getHours()).padStart(2, '0');
   const mi = String(d.getMinutes()).padStart(2, '0');
   return `${mm}-${dd} ${hh}:${mi}`;
+}
+
+function formatDateTime(v: string) {
+  const d = new Date(v);
+  const y = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+function payChannelLabel(channel: string) {
+  return channel === 'ALIPAY' ? '支付宝' : channel === 'WECHAT' ? '微信支付' : channel;
 }
 
 onMounted(load);

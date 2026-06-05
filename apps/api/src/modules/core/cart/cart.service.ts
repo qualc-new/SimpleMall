@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { BizError } from '../../../common/exceptions/business.exception';
 import { SpuStatus, isSpuPurchasable, normalizeSpuStatus } from '@simplemall/shared';
+import { resolveEnabledServiceGuarantees } from '../catalog/service-list.helper';
 
 @Injectable()
 export class CartService {
@@ -13,7 +14,7 @@ export class CartService {
       include: { sku: { include: { spu: true } } },
     });
 
-    return items.map((row) => {
+    return Promise.all(items.map(async (row) => {
       const spuStatus = normalizeSpuStatus(row.sku.spu.status);
       const valid =
         row.sku.status === 'ENABLED' &&
@@ -25,6 +26,10 @@ export class CartService {
           : spuStatus === SpuStatus.RESTOCKING
             ? '商品补货中'
             : '商品失效或库存不足';
+      const serviceGuarantees = await resolveEnabledServiceGuarantees(
+        this.prisma,
+        row.sku.spu.serviceList,
+      );
       return {
         id: row.id,
         skuId: row.skuId,
@@ -39,9 +44,12 @@ export class CartService {
           specs: row.sku.specsJson as Record<string, string>,
           spuTitle: row.sku.spu.title,
           mainImage: row.sku.spu.mainImage,
+          spuImages: (row.sku.spu.imagesJson as string[]) ?? [],
+          spuMarketPrice: row.sku.spu.marketPrice,
+          serviceGuarantees,
         },
       };
-    });
+    }));
   }
 
   async addItem(userId: number, skuId: number, quantity: number) {

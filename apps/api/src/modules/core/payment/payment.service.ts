@@ -14,24 +14,45 @@ export class PaymentService {
     private inventory: InventoryService,
   ) {}
 
+  /**
+   * 创建或复用支付单。
+   * INIT 状态复用原流水号；已关闭或首次创建则写入新 paymentNo，确保 payUrl 与库内一致。
+   */
   async create(userId: number, orderId: number, channel: PayChannel) {
     const order = await this.prisma.order.findFirst({ where: { id: orderId, userId } });
     if (!order || order.status !== OrderStatus.PENDING_PAY) {
       throw BizError.notFound('订单不可支付');
     }
 
-    const paymentNo = `PAY${Date.now()}${Math.floor(Math.random() * 1000)}`;
-    await this.prisma.payment.upsert({
-      where: { orderId },
-      create: {
-        paymentNo,
-        orderId,
-        channel,
-        amount: order.payAmount,
-        status: PaymentStatus.INIT,
-      },
-      update: { channel, status: PaymentStatus.INIT },
-    });
+    const existing = await this.prisma.payment.findUnique({ where: { orderId } });
+    let paymentNo: string;
+
+    if (existing?.status === PaymentStatus.INIT) {
+      // 待支付单复用流水号，避免重复发起支付时 URL 与库内 paymentNo 不一致
+      paymentNo = existing.paymentNo;
+      await this.prisma.payment.update({
+        where: { orderId },
+        data: { channel },
+      });
+    } else {
+      paymentNo = `PAY${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      await this.prisma.payment.upsert({
+        where: { orderId },
+        create: {
+          paymentNo,
+          orderId,
+          channel,
+          amount: order.payAmount,
+          status: PaymentStatus.INIT,
+        },
+        update: {
+          paymentNo,
+          channel,
+          amount: order.payAmount,
+          status: PaymentStatus.INIT,
+        },
+      });
+    }
 
     const base = process.env.API_PUBLIC_URL ?? 'http://localhost:4000';
     const payUrl = `${base}/api/v1/mock-pay?paymentNo=${paymentNo}`;
