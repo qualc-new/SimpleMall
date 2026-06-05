@@ -5,8 +5,8 @@
 
 ## 当前焦点
 
-- **任务**：Harness 工程化体系（v0.11.0）
-- **状态**：done
+- **任务**：（无）
+- **状态**：idle
 - **分支**：main
 - **最后更新**：2026-06-05
 
@@ -14,7 +14,8 @@
 
 | 日期 | 模块 | 摘要 | 验证 |
 | ---- | ---- | ---- | ---- |
-| 2026-06-05 | docs / harness / .cursor / .agents / CI | Harness 工程化体系：约束规则、verify 脚本、hooks、Spec 工作流、simplemall 技能、GitHub Actions | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | `.github/workflows` | CI 升级 Actions v6 + Node.js 24，消除 GitHub Node 20 弃用警告 | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | docs / harness / .cursor / .agents / CI | Harness 工程化体系（v0.11.0）：约束、verify、hooks、Spec、技能 | `./harness/verify.sh types` 通过 |
 
 ## 进行中 / 阻塞
 
@@ -22,12 +23,11 @@
 
 ## 下一步
 
-1. 可选：启用 GitHub Actions 后观察 `harness-verify.yml` 首跑
-2. 可选：补 pre-commit 或 Playwright E2E（见 `docs/Harness工程化体系.md` 演进路线）
+1. 推送后确认 GitHub Actions `Harness Verify` 无弃用警告且绿勾
+2. 可选：补 pre-commit 或 Playwright E2E（见 `docs/Harness工程化体系.md`）
 
 ## 决策与约束（本会话有效）
 
-- 本地开发优先 `./dev.sh`
+- 本地开发优先 `./dev.sh`；`engines.node` 仍 `>=20`，CI 使用 Node 24
 - 有交付价值时更新 `docs/版本迭代说明.md`
 - 交付前运行 `./harness/verify.sh types`（大改运行 `all`）
-- `verify:types` 采用生产构建验证（shared tsc → api nest → admin vite → web nuxt）

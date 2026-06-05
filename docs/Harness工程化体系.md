@@ -123,7 +123,7 @@ pnpm verify:build        # 仅构建
 
 ### 4.3 CI：`.github/workflows/harness-verify.yml`
 
-Push / PR 时自动运行 `pnpm verify:types`（构建可在后续阶段加入）。
+Push / PR 时自动运行 `pnpm verify:types`（CI 使用 Node.js 24 + Actions v6 运行时）。
 
 ---
 
