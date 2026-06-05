@@ -77,6 +77,8 @@
     </main>
     <AppFooter />
     <LoginModal />
+    <AiChatButton />
+    <AiChatDialog />
   </div>
 </template>
 

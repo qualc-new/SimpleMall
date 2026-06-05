@@ -39,6 +39,7 @@ export class CartService {
           specs: row.sku.specsJson as Record<string, string>,
           spuTitle: row.sku.spu.title,
           mainImage: row.sku.spu.mainImage,
+          spuImages: (row.sku.spu.imagesJson as string[]) ?? [],
         },
       };
     });

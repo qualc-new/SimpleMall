@@ -7,15 +7,16 @@
 
 - **任务**：（无）
 - **状态**：idle
-- **分支**：main
+- **分支**：feature/ai-chat
 - **最后更新**：2026-06-05
 
 ## 最近完成
 
 | 日期 | 模块 | 摘要 | 验证 |
 | ---- | ---- | ---- | ---- |
-| 2026-06-05 | `.github/workflows` | CI 升级 Actions v6 + Node.js 24，消除 GitHub Node 20 弃用警告 | `./harness/verify.sh types` 通过 |
-| 2026-06-05 | docs / harness / .cursor / .agents / CI | Harness 工程化体系（v0.11.0）：约束、verify、hooks、Spec、技能 | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | apps/web | v0.12.5：ImagePreviewCarousel 公共组件（images/initialIndex/v-model）；checkout、订单详情页接入 | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | apps/web, apps/api | v0.12.4：确认订单商品图预览轮播；地址选择 router.back()；cart spuImages | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | apps/web | v0.12.3：确认订单页商品/地址体验、地址弹窗关闭 | `./harness/verify.sh types` 通过 |
 
 ## 进行中 / 阻塞
 
@@ -23,11 +24,9 @@
 
 ## 下一步
 
-1. 推送后确认 GitHub Actions `Harness Verify` 无弃用警告且绿勾
-2. 可选：补 pre-commit 或 Playwright E2E（见 `docs/Harness工程化体系.md`）
+1. 合并 `feature/ai-chat` 并推送
+2. 可选：云托管修正 `REDIS_URL`（对话历史 Redis 缓存）
 
 ## 决策与约束（本会话有效）
 
-- 本地开发优先 `./dev.sh`；`engines.node` 仍 `>=20`，CI 使用 Node 24
-- 有交付价值时更新 `docs/版本迭代说明.md`
-- 交付前运行 `./harness/verify.sh types`（大改运行 `all`）
+- 全屏预览用 `ImagePreviewCarousel`；页内商品图轮播仍用 `ProductImageCarousel`

@@ -450,7 +450,12 @@ function buyNow() {
   if (!requireLogin()) return;
   clampQty();
   const title = encodeURIComponent(spu.value!.title);
-  navigateTo(`/checkout?skuId=${currentSku.value.id}&qty=${quantity.value}&buyNow=1&title=${title}&price=${currentSku.value.price}`);
+  const image = encodeURIComponent(spu.value!.mainImage);
+  const specs = encodeURIComponent(JSON.stringify(currentSku.value.specs));
+  const images = encodeURIComponent(JSON.stringify(spu.value!.images ?? []));
+  navigateTo(
+    `/checkout?skuId=${currentSku.value.id}&qty=${quantity.value}&buyNow=1&title=${title}&price=${currentSku.value.price}&image=${image}&specs=${specs}&images=${images}`,
+  );
 }
 </script>
 
