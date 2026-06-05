@@ -14,9 +14,7 @@
 
 | 日期 | 模块 | 摘要 | 验证 |
 | ---- | ---- | ---- | ---- |
-| 2026-06-05 | apps/web | v0.12.5：ImagePreviewCarousel 公共组件（images/initialIndex/v-model）；checkout、订单详情页接入 | `./harness/verify.sh types` 通过 |
-| 2026-06-05 | apps/web, apps/api | v0.12.4：确认订单商品图预览轮播；地址选择 router.back()；cart spuImages | `./harness/verify.sh types` 通过 |
-| 2026-06-05 | apps/web | v0.12.3：确认订单页商品/地址体验、地址弹窗关闭 | `./harness/verify.sh types` 通过 |
+| 2026-06-05 | apps/web, apps/api, docs | v0.12.2：订单信息与确认订单体验（详情 key-value、结算商品/地址/图预览、ImagePreviewCarousel、cart 扩展） | `./harness/verify.sh types` 通过 |
 
 ## 进行中 / 阻塞
 
@@ -29,4 +27,4 @@
 
 ## 决策与约束（本会话有效）
 
-- 全屏预览用 `ImagePreviewCarousel`；页内商品图轮播仍用 `ProductImageCarousel`
+- 版本说明：v0.12.2～v0.12.6 补丁已合并为 v0.12.2 一条总结

@@ -18,44 +18,51 @@
       </div>
     </div>
 
-    <!-- 订单信息：地址、时间等 -->
+    <!-- 订单信息：key-value 左右布局 -->
     <div class="bg-white p-6 rounded-xl shadow">
       <h2 class="text-base font-semibold text-gray-900 mb-4">订单信息</h2>
-      <dl class="grid gap-3 text-sm sm:grid-cols-2">
-        <div v-if="shippingAddress" class="sm:col-span-2">
-          <dt class="text-gray-400 mb-1">配送地址</dt>
-          <dd class="text-gray-900">
+      <dl class="divide-y divide-gray-100 text-sm">
+        <div v-if="shippingAddress" class="flex gap-4 py-3 first:pt-0">
+          <dt class="text-gray-500 w-20 shrink-0">配送地址</dt>
+          <dd class="flex-1 text-gray-900 text-right min-w-0">
             <p class="font-medium">{{ shippingAddress.name }} {{ shippingAddress.phone }}</p>
-            <p class="text-gray-600 mt-0.5">{{ shippingAddress.full }}</p>
+            <p class="text-gray-600 mt-0.5 break-words">{{ shippingAddress.full }}</p>
           </dd>
         </div>
-        <div>
-          <dt class="text-gray-400 mb-1">下单时间</dt>
-          <dd class="text-gray-900">{{ formatDateTime(order.createdAt) }}</dd>
+        <div class="flex justify-between gap-4 py-3">
+          <dt class="text-gray-500 shrink-0">下单时间</dt>
+          <dd class="text-gray-900 text-right">{{ formatDateTime(order.createdAt) }}</dd>
         </div>
-        <div v-if="order.updatedAt && order.updatedAt !== order.createdAt">
-          <dt class="text-gray-400 mb-1">更新时间</dt>
-          <dd class="text-gray-900">{{ formatDateTime(order.updatedAt) }}</dd>
+        <div
+          v-if="order.updatedAt && order.updatedAt !== order.createdAt"
+          class="flex justify-between gap-4 py-3"
+        >
+          <dt class="text-gray-500 shrink-0">更新时间</dt>
+          <dd class="text-gray-900 text-right">{{ formatDateTime(order.updatedAt) }}</dd>
         </div>
-        <div v-if="order.payment">
-          <dt class="text-gray-400 mb-1">支付方式</dt>
-          <dd class="text-gray-900">{{ payChannelLabel(order.payment.channel) }}</dd>
+        <div v-if="order.payment" class="flex justify-between gap-4 py-3">
+          <dt class="text-gray-500 shrink-0">支付方式</dt>
+          <dd class="text-gray-900 text-right">{{ payChannelLabel(order.payment.channel) }}</dd>
         </div>
-        <div v-if="order.payment?.paidAt">
-          <dt class="text-gray-400 mb-1">支付时间</dt>
-          <dd class="text-gray-900">{{ formatDateTime(order.payment.paidAt) }}</dd>
+        <div v-if="order.payment?.paidAt" class="flex justify-between gap-4 py-3">
+          <dt class="text-gray-500 shrink-0">支付时间</dt>
+          <dd class="text-gray-900 text-right">{{ formatDateTime(order.payment.paidAt) }}</dd>
         </div>
-        <div v-if="order.remark" class="sm:col-span-2">
-          <dt class="text-gray-400 mb-1">买家留言</dt>
-          <dd class="text-gray-900">{{ order.remark }}</dd>
+        <div v-if="order.remark" class="flex gap-4 py-3">
+          <dt class="text-gray-500 w-20 shrink-0">买家留言</dt>
+          <dd class="flex-1 text-gray-900 text-right break-words">{{ order.remark }}</dd>
         </div>
+        <template v-if="logistics">
+          <div class="flex justify-between gap-4 py-3">
+            <dt class="text-gray-500 shrink-0">物流公司</dt>
+            <dd class="text-gray-900 text-right">{{ logistics.company }}</dd>
+          </div>
+          <div class="flex justify-between gap-4 py-3 last:pb-0">
+            <dt class="text-gray-500 shrink-0">快递单号</dt>
+            <dd class="text-gray-900 text-right break-all">{{ logistics.trackingNo }}</dd>
+          </div>
+        </template>
       </dl>
-    </div>
-
-    <!-- 物流信息 -->
-    <div v-if="logistics" class="bg-white p-4 rounded-xl shadow text-sm space-y-1">
-      <p><span class="text-gray-400">物流公司</span> {{ logistics.company }}</p>
-      <p><span class="text-gray-400">快递单号</span> {{ logistics.trackingNo }}</p>
     </div>
 
     <!-- 商品列表 -->

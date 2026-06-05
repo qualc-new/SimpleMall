@@ -453,8 +453,10 @@ function buyNow() {
   const image = encodeURIComponent(spu.value!.mainImage);
   const specs = encodeURIComponent(JSON.stringify(currentSku.value.specs));
   const images = encodeURIComponent(JSON.stringify(spu.value!.images ?? []));
+  const marketPrice = spu.value!.marketPrice;
+  const services = encodeURIComponent(JSON.stringify(serviceTags.value));
   navigateTo(
-    `/checkout?skuId=${currentSku.value.id}&qty=${quantity.value}&buyNow=1&title=${title}&price=${currentSku.value.price}&image=${image}&specs=${specs}&images=${images}`,
+    `/checkout?skuId=${currentSku.value.id}&qty=${quantity.value}&buyNow=1&title=${title}&price=${currentSku.value.price}&image=${image}&specs=${specs}&images=${images}&marketPrice=${marketPrice}&services=${services}`,
   );
 }
 </script>

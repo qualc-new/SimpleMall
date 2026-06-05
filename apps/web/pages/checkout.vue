@@ -54,9 +54,25 @@
               <p v-if="specText(row.sku.specs)" class="text-xs text-gray-500 mt-1">
                 {{ specText(row.sku.specs) }}
               </p>
+              <div
+                v-if="row.sku.serviceGuarantees?.length"
+                class="flex flex-wrap gap-1 mt-2"
+              >
+                <span
+                  v-for="s in row.sku.serviceGuarantees"
+                  :key="s"
+                  class="text-[10px] text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded"
+                >{{ s }}</span>
+              </div>
             </div>
             <div class="shrink-0 text-right">
               <p class="text-base font-semibold text-gray-900">{{ format(row.sku.price) }}</p>
+              <p
+                v-if="showMarketPrice(row)"
+                class="text-xs text-gray-400 line-through"
+              >
+                {{ format(row.sku.spuMarketPrice!) }}
+              </p>
               <p class="text-sm text-gray-400 mt-1">× {{ row.quantity }}</p>
             </div>
           </div>
@@ -117,6 +133,8 @@ interface CheckoutLine {
     price: number;
     mainImage?: string;
     spuImages?: string[];
+    spuMarketPrice?: number;
+    serviceGuarantees?: string[];
     specs?: Record<string, string>;
   };
 }
@@ -148,6 +166,11 @@ function lineImages(row: CheckoutLine): string[] {
 
 function lineImageCount(row: CheckoutLine) {
   return lineImages(row).length;
+}
+
+function showMarketPrice(row: CheckoutLine) {
+  const mp = row.sku.spuMarketPrice ?? 0;
+  return mp > 0 && mp > row.sku.price;
 }
 
 function openGallery(itemIdx: number) {
@@ -189,11 +212,22 @@ async function loadLines() {
       typeof route.query.image === 'string' ? decodeURIComponent(route.query.image) : undefined;
     const specs = parseJsonFromQuery(route.query.specs) as Record<string, string> | undefined;
     const spuImages = (parseJsonFromQuery(route.query.images) as string[] | undefined) ?? [];
+    const spuMarketPrice = Number(route.query.marketPrice) || 0;
+    const serviceGuarantees =
+      (parseJsonFromQuery(route.query.services) as string[] | undefined) ?? [];
     lines.value = [
       {
         id: 0,
         quantity: qty,
-        sku: { spuTitle: title, price, mainImage: image, spuImages, specs },
+        sku: {
+          spuTitle: title,
+          price,
+          mainImage: image,
+          spuImages,
+          spuMarketPrice: spuMarketPrice || undefined,
+          serviceGuarantees,
+          specs,
+        },
       },
     ];
     return;
@@ -210,6 +244,8 @@ async function loadLines() {
         price: number;
         mainImage: string;
         spuImages?: string[];
+        spuMarketPrice?: number;
+        serviceGuarantees?: string[];
         specs: Record<string, string>;
       };
     }>
