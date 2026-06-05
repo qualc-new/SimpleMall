@@ -59,7 +59,8 @@ export class CatalogService {
       mainImage: s.mainImage,
       categoryId: s.categoryId,
       status: normalizeSpuStatus(s.status),
-      minPrice: Math.min(...s.skus.map((k) => k.price), 0) || 0,
+      // 取启用 SKU 最低价；勿向 Math.min 传入 0，否则售价恒为 0
+      minPrice: s.skus.length ? Math.min(...s.skus.map((k) => k.price)) : 0,
       marketPrice: s.marketPrice,
       totalStock: s.totalStock,
       saleNum: s.saleNum,

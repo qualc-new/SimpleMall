@@ -1,0 +1,15 @@
+{
+  "indexDocument": "index.html",
+  "routingRules": [
+    {
+      "keyPrefixEquals": "web/",
+      "httpErrorCodeReturnedEquals": "404",
+      "replaceKeyWith": "web/200.html"
+    },
+    {
+      "keyPrefixEquals": "admin/",
+      "httpErrorCodeReturnedEquals": "404",
+      "replaceKeyWith": "admin/index.html"
+    }
+  ]
+}

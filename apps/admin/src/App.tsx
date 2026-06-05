@@ -14,10 +14,11 @@ import UserListPage from './pages/User/List';
 import OrderDetailPage from './pages/Order/Detail';
 import MockPayPage from './pages/DevTools/MockPay';
 import ProtectedRoute from './routes/ProtectedRoute';
+import { getAdminRouterBasename } from './utils/basePath';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={getAdminRouterBasename()}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

@@ -24,16 +24,17 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [cats, spus, orders] = await Promise.all([
+        // 商品/订单接口为分页结构 { list, total }，统计取 total 字段
+        const [cats, spus, spusOnSale, orders] = await Promise.all([
           http.get<unknown[]>('/admin/categories'),
-          http.get<Array<{ status: string }>>('/admin/spus'),
+          http.get<{ total: number }>('/admin/spus', { params: { pageSize: 1 } }),
+          http.get<{ total: number }>('/admin/spus', { params: { status: 'ON_SALE', pageSize: 1 } }),
           http.get<{ total: number }>('/admin/orders', { params: { pageSize: 1 } }),
         ]);
-        const spuList = spus.data;
         setStats({
           categories: cats.data.length,
-          products: spuList.length,
-          onSale: spuList.filter((s) => s.status === 'ON_SALE').length,
+          products: spus.data.total,
+          onSale: spusOnSale.data.total,
           orders: orders.data.total,
         });
       } finally {
